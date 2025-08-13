@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WatchRank (Google Sheets)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WatchRank Mobile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -28,33 +28,41 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 html, body {
   max-width: 100%;
   overflow-x: hidden;
+  touch-action: manipulation;
+  height: 100%;
 }
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--background);
   color: var(--text-primary);
   line-height: 1.6;
+  font-size: 14px;
 }
 .container {
-  max-width: 700px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 12px;
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
+  padding-top: 10px;
 }
 header h1 {
-  font-size: 2.5em;
+  font-size: 1.8em;
   font-weight: 700;
 }
 .status-bar {
-  font-size: 0.9em;
+  font-size: 0.85em;
   color: var(--text-secondary);
   margin-bottom: 12px;
   text-align: center;
@@ -65,23 +73,25 @@ header h1 {
 /* --- Add Item Form & Suggestions --- */
 .add-item-form-container {
   position: relative;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
+  z-index: 100;
 }
 .add-item-form {
   display: flex;
   gap: 12px;
   background: var(--card-bg);
-  padding: 16px;
+  padding: 12px;
   border-radius: 12px;
   box-shadow: var(--shadow);
 }
 #item-title-input {
   flex-grow: 1;
   border: 1px solid var(--border-color);
-  padding: 12px 16px;
+  padding: 12px 14px;
   border-radius: 8px;
-  font-size: 16px; /* Important for iOS to prevent zoom */
+  font-size: 16px;
   min-width: 0;
+  -webkit-appearance: none;
 }
 #item-title-input:focus {
   outline: none;
@@ -92,7 +102,7 @@ header h1 {
   border: none;
   background: var(--accent);
   color: #fff;
-  padding: 0 24px;
+  padding: 0 20px;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
@@ -105,52 +115,104 @@ header h1 {
   cursor: not-allowed;
 }
 #suggestions-box {
-  display: none;
-  position: absolute;
-  top: 100%;
+  position: fixed;
+  top: 0;
   left: 0;
   right: 0;
+  bottom: 0;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 0 0 12px 12px;
-  box-shadow: var(--shadow);
-  z-index: 10;
-  max-height: 300px;
+  z-index: 10000;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+.suggestions-header {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--card-bg);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.suggestions-header h2 {
+  font-size: 1.3em;
+}
+#close-suggestions-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+#close-suggestions-btn:hover {
+  background: var(--background);
+}
+#close-suggestions-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: var(--text-secondary);
+}
+#suggestions-list {
+  flex: 1;
   overflow-y: auto;
-  margin-top: -12px;
-  padding-top: 12px;
+  padding: 0 16px 16px;
 }
 .suggestion-item {
-  padding: 10px 16px;
+  padding: 14px 0;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 12px;
   word-break: break-word;
   transition: background-color 0.2s;
+  border-bottom: 1px solid var(--border-color);
+}
+.suggestion-item:last-child {
+  border-bottom: none;
 }
 .suggestion-item:hover {
   background-color: var(--background);
 }
 .suggestion-item img {
-  width: 40px;
-  height: 60px;
+  width: 50px;
+  height: 75px;
   object-fit: cover;
   border-radius: 4px;
   background: #eee;
   flex-shrink: 0;
 }
+.suggestion-item-content {
+  flex: 1;
+}
+.suggestion-item-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.suggestion-item-meta {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
 
 /* --- Item List & Cards --- */
 .item-list {
   display: grid;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 20px;
 }
 .item-card {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 12px;
   background: var(--card-bg);
   padding: 16px;
   border-radius: 12px;
@@ -160,17 +222,17 @@ header h1 {
   position: relative;
 }
 .item-card-rank {
-  font-size: 1.5em;
+  font-size: 1.3em;
   font-weight: 700;
   color: var(--text-secondary);
-  width: 40px;
+  width: 30px;
   text-align: center;
   padding-top: 4px;
   flex-shrink: 0;
 }
 .item-card-poster {
-  width: 80px;
-  height: 120px;
+  width: 60px;
+  height: 90px;
   object-fit: cover;
   border-radius: 8px;
   background: #eee;
@@ -182,14 +244,14 @@ header h1 {
   overflow: hidden;
 }
 .item-card-title {
-  font-size: 1.25em;
+  font-size: 1.1em;
   font-weight: 600;
   margin-bottom: 4px;
   word-break: break-word;
   hyphens: auto;
 }
 .item-card-meta {
-  font-size: 0.9em;
+  font-size: 0.85em;
   color: var(--text-secondary);
   background: var(--background);
   display: inline-block;
@@ -201,14 +263,14 @@ header h1 {
 .item-card-voting {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 16px;
 }
 .vote-btn {
   background: none;
   border: 1px solid var(--border-color);
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -218,8 +280,8 @@ header h1 {
   flex-shrink: 0;
 }
 .vote-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   fill: var(--text-secondary);
 }
 .vote-btn.up.voted {
@@ -237,9 +299,9 @@ header h1 {
   fill: white;
 }
 .vote-count {
-  font-size: 1.25em;
+  font-size: 1.2em;
   font-weight: 700;
-  min-width: 40px;
+  min-width: 30px;
   text-align: center;
 }
 .vote-count.positive {
@@ -313,8 +375,8 @@ header h1 {
 .comments-panel {
   position: fixed;
   top: 0;
-  right: -400px;
-  width: 400px;
+  right: -100%;
+  width: 100%;
   height: 100vh;
   background: var(--panel-bg);
   box-shadow: var(--panel-shadow);
@@ -392,7 +454,7 @@ header h1 {
 }
 
 .comment-form {
-  padding: 20px;
+  padding: 16px;
   border-top: 1px solid var(--border-color);
   display: flex;
   gap: 12px;
@@ -456,110 +518,6 @@ header h1 {
   padding: 40px 20px;
   font-size: 0.9em;
 }
-
-/* --- Mobile-Friendly Adjustments --- */
-@media (max-width: 768px) {
-  .comments-panel {
-    width: 100%;
-    right: -100%;
-  }
-  
-  body {
-    font-size: 14px;
-  }
-  .container {
-    padding: 12px 8px;
-  }
-  header h1 {
-    font-size: 1.8em;
-  }
-  .add-item-form {
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-  }
-  #add-item-btn {
-    width: 100%;
-    padding: 12px;
-  }
-  .item-card {
-    gap: 10px;
-    padding: 12px 10px;
-    margin: 0 2px;
-  }
-  .item-card-poster {
-    width: 50px;
-    height: 75px;
-  }
-  .item-card-rank {
-    width: 25px;
-    font-size: 1em;
-  }
-  .item-card-title {
-    font-size: 1em;
-    line-height: 1.3;
-  }
-  .item-card-voting {
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  .vote-btn {
-    width: 35px;
-    height: 35px;
-  }
-  .vote-btn svg {
-    width: 16px;
-    height: 16px;
-  }
-  .vote-count {
-    min-width: 25px;
-    font-size: 1.1em;
-  }
-  .suggestion-item {
-    padding: 8px 12px;
-    gap: 8px;
-  }
-  .suggestion-item img {
-    width: 30px;
-    height: 45px;
-  }
-  .comments-toggle {
-    width: 32px;
-    height: 32px;
-  }
-  .comments-toggle svg {
-    width: 16px;
-    height: 16px;
-  }
-}
-@media (max-width: 480px) {
-  .container {
-    padding: 8px 4px;
-  }
-  .item-card {
-    padding: 10px 8px;
-    gap: 8px;
-  }
-  .item-card-rank {
-    font-size: 0.9em;
-    width: 20px;
-  }
-  .item-card-poster {
-    width: 40px;
-    height: 60px;
-  }
-  .item-card-title {
-    font-size: 0.95em;
-  }
-  .vote-btn {
-    width: 32px;
-    height: 32px;
-  }
-  .vote-btn svg {
-    width: 14px;
-    height: 14px;
-  }
-}
 </style>
 </head>
 <body>
@@ -572,13 +530,22 @@ header h1 {
 
   <div class="add-item-form-container">
     <div class="add-item-form">
-      <input type="text" id="item-title-input" placeholder="Enter a movie or TV show title..." autocomplete="off">
+      <input type="text" id="item-title-input" placeholder="Enter a movie or TV show..." autocomplete="off">
       <button id="add-item-btn">Add</button>
     </div>
-    <div id="suggestions-box"></div>
+    <div id="suggestions-box">
+      <div class="suggestions-header">
+        <h2>Select a title</h2>
+        <button id="close-suggestions-btn">
+          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div id="suggestions-list"></div>
+    </div>
   </div>
 
   <div class="item-list" id="item-list">
+    <div class="empty-state">Loading your watchlist...</div>
   </div>
 </div>
 
@@ -604,15 +571,14 @@ header h1 {
 
 <script>
 /**
- * WatchRank Application - Improved Version
- * Fixes autocomplete behavior, save issues, and improves comments UI
+ * WatchRank Application - Mobile Optimized Version
  */
 (() => {
   // ---------- 1. CONFIGURATION ----------
   const config = {
     SHEET_WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbyqXwU5IcX1xgZYPpjC0deL5vdH60NHyEqrIcbTVeWJzKqnNKU-ptCIpGT9HtrUuMM7/exec',
     TMDB_API_KEY: '269a5d47b3552e41b40624c646f09456',
-    POLL_INTERVAL_MS: 15000, // Increased for better debugging
+    POLL_INTERVAL_MS: 15000,
     SUGGESTION_DEBOUNCE_MS: 300,
   };
 
@@ -634,6 +600,8 @@ header h1 {
     addButton: document.getElementById('add-item-btn'),
     itemList: document.getElementById('item-list'),
     suggestionsBox: document.getElementById('suggestions-box'),
+    suggestionsList: document.getElementById('suggestions-list'),
+    closeSuggestionsBtn: document.getElementById('close-suggestions-btn'),
     statusBar: document.getElementById('status'),
     commentsPanel: document.getElementById('comments-panel'),
     commentsOverlay: document.getElementById('comments-overlay'),
@@ -736,7 +704,7 @@ header h1 {
 
         utils.debugLog(`Loaded ${state.items.length} items`);
         ui.render();
-        ui.updateStatus(`Synced ${state.items.length} items at ${new Date().toLocaleTimeString()}`);
+        ui.updateStatus(`Synced ${state.items.length} items`);
         
       } catch (err) {
         console.error('Error loading from sheet:', err);
@@ -851,12 +819,15 @@ header h1 {
     },
     
     renderSuggestions(suggestions) {
-      this.hideSuggestions();
+      DOMElements.suggestionsList.innerHTML = '';
       const relevantSuggestions = suggestions
         .filter(s => s.media_type === 'movie' || s.media_type === 'tv')
-        .slice(0, 5);
+        .slice(0, 8);
       
-      if (relevantSuggestions.length === 0) return;
+      if (relevantSuggestions.length === 0) {
+        DOMElements.suggestionsList.innerHTML = '<p class="empty-state">No results found</p>';
+        return;
+      }
       
       const fragment = document.createDocumentFragment();
       relevantSuggestions.forEach(s => {
@@ -867,31 +838,31 @@ header h1 {
         el.dataset.id = s.id;
         el.dataset.mediaType = s.media_type;
         el.dataset.title = s.title || s.name;
-        el.dataset.posterPath = s.poster_path; // Store the partial path
+        el.dataset.posterPath = s.poster_path;
         
         const title = s.title || s.name;
         const year = (s.release_date || s.first_air_date)?.substring(0,4) || 'N/A';
         const poster = s.poster_path 
           ? `https://image.tmdb.org/t/p/w92${s.poster_path}` 
-          : 'https://via.placeholder.com/40x60.png?text=N/A';
+          : 'https://via.placeholder.com/50x75.png?text=N/A';
         
         el.innerHTML = `
           <img src="${poster}" alt="poster">
-          <div>
-            <div>${utils.escapeHtml(title)}</div>
-            <small>${utils.escapeHtml(s.media_type === 'tv' ? 'TV Show' : 'Movie')} (${year})</small>
+          <div class="suggestion-item-content">
+            <div class="suggestion-item-title">${utils.escapeHtml(title)}</div>
+            <div class="suggestion-item-meta">${utils.escapeHtml(s.media_type === 'tv' ? 'TV Show' : 'Movie')} • ${year}</div>
           </div>
         `;
         fragment.appendChild(el);
       });
       
-      DOMElements.suggestionsBox.appendChild(fragment);
-      DOMElements.suggestionsBox.style.display = 'block';
+      DOMElements.suggestionsList.appendChild(fragment);
+      DOMElements.suggestionsBox.style.display = 'flex';
     },
     
     hideSuggestions() { 
       DOMElements.suggestionsBox.style.display = 'none'; 
-      DOMElements.suggestionsBox.innerHTML = ''; 
+      DOMElements.suggestionsList.innerHTML = '';
     },
     
     renderCommentsPanel() {
@@ -1081,7 +1052,7 @@ header h1 {
       state.selectedSuggestion = null; // Reset selection on type
       
       const query = DOMElements.titleInput.value.trim();
-      if (query.length < 3) {
+      if (query.length < 2) {
         ui.hideSuggestions();
         return;
       }
@@ -1105,6 +1076,14 @@ header h1 {
       // Auto-add the item immediately when clicking suggestion
       utils.debugLog('Auto-adding suggestion:', state.selectedSuggestion);
       await handlers.handleAddItem();
+    },
+    
+    handleOutsideTap(e) {
+      // Close suggestions if tapping outside the form
+      if (!e.target.closest('.add-item-form-container') && 
+          !e.target.closest('#suggestions-box')) {
+        ui.hideSuggestions();
+      }
     }
   };
 
@@ -1146,12 +1125,9 @@ header h1 {
     });
     
     // Event listeners for suggestions
-    DOMElements.suggestionsBox.addEventListener('click', handlers.handleSuggestionClick);
-    document.addEventListener('click', (e) => { 
-      if (!e.target.closest('.add-item-form-container')) {
-        ui.hideSuggestions(); 
-      }
-    });
+    DOMElements.suggestionsList.addEventListener('click', handlers.handleSuggestionClick);
+    DOMElements.closeSuggestionsBtn.addEventListener('click', ui.hideSuggestions);
+    document.addEventListener('click', handlers.handleOutsideTap);
 
     // Event listeners for comments panel
     DOMElements.closeComments.addEventListener('click', ui.closeCommentsPanel);
@@ -1164,10 +1140,14 @@ header h1 {
       }
     });
 
-    // ESC key to close comments panel
+    // ESC key to close panels
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && state.currentCommentsItemId) {
-        ui.closeCommentsPanel();
+      if (e.key === 'Escape') {
+        if (state.currentCommentsItemId) {
+          ui.closeCommentsPanel();
+        } else if (DOMElements.suggestionsBox.style.display === 'flex') {
+          ui.hideSuggestions();
+        }
       }
     });
 
