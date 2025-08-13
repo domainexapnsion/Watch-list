@@ -21,6 +21,8 @@
   --shadow: 0 4px 12px rgba(0,0,0,0.08);
   --comment-bg: #f8f9fa;
   --comment-text: #777;
+  --panel-bg: #ffffff;
+  --panel-shadow: 0 8px 32px rgba(0,0,0,0.12);
 }
 * {
   box-sizing: border-box;
@@ -125,6 +127,7 @@ header h1 {
   align-items: center;
   gap: 12px;
   word-break: break-word;
+  transition: background-color 0.2s;
 }
 .suggestion-item:hover {
   background-color: var(--background);
@@ -154,6 +157,7 @@ header h1 {
   box-shadow: var(--shadow);
   width: 100%;
   overflow: hidden;
+  position: relative;
 }
 .item-card-rank {
   font-size: 1.5em;
@@ -173,7 +177,7 @@ header h1 {
   flex-shrink: 0;
 }
 .item-card-content {
-  min-width: 0; /* Important flexbox fix for wrapping */
+  min-width: 0;
   flex-grow: 1;
   overflow: hidden;
 }
@@ -245,70 +249,199 @@ header h1 {
   color: var(--downvote-color);
 }
 
-/* --- Comments Section (More Subtle) --- */
-.comments-section {
-  border-top: 1px solid #f0f0f0;
-  padding-top: 12px;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-.comments-section:hover {
-  opacity: 1;
-}
-.comment-form {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-.comment-input {
-  flex-grow: 1;
-  border: 1px solid #e8e8e8;
-  background: var(--comment-bg);
-  padding: 6px 10px;
-  border-radius: 12px;
-  font-size: 13px;
-  color: var(--comment-text);
-  min-width: 0;
-}
-.comment-input::placeholder {
-  color: #bbb;
-  font-size: 12px;
-}
-.comment-btn {
-  border: none;
-  background: #e8e8e8;
-  color: var(--comment-text);
-  padding: 0 12px;
-  border-radius: 12px;
-  font-weight: 500;
+/* --- Comments Button & Panel --- */
+.comments-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: 1px solid var(--border-color);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   cursor: pointer;
-  font-size: 13px;
-  white-space: nowrap;
-  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 2;
 }
-.comment-btn:hover {
+.comments-toggle:hover {
+  background: var(--background);
+  border-color: var(--accent);
+}
+.comments-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--text-secondary);
+  transition: transform 0.2s;
+}
+.comments-toggle.active svg {
+  transform: rotate(180deg);
+  fill: var(--accent);
+}
+.comments-toggle.active {
+  background: var(--accent);
+}
+.comments-toggle.active svg {
+  fill: white;
+}
+
+.comments-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
   background: var(--accent);
   color: white;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s;
+}
+.comments-count.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.comments-panel {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 400px;
+  height: 100vh;
+  background: var(--panel-bg);
+  box-shadow: var(--panel-shadow);
+  z-index: 1000;
+  transition: right 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+.comments-panel.open {
+  right: 0;
+}
+
+.comments-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.comments-header h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0;
+}
+.close-comments {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+.close-comments:hover {
+  background: var(--background);
+}
+.close-comments svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--text-secondary);
+}
+
+.comments-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .comments-list {
-  display: grid;
-  gap: 6px;
-  font-size: 0.85em;
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .comment {
   background: var(--comment-bg);
-  padding: 6px 10px;
-  border-radius: 8px;
-  word-break: break-word;
-  color: var(--comment-text);
+  padding: 12px 16px;
+  border-radius: 12px;
   border: 1px solid #f0f0f0;
+  word-break: break-word;
 }
 .comment .comment-user {
   font-weight: 600;
   color: var(--accent);
-  margin-right: 4px;
-  opacity: 0.8;
+  margin-bottom: 4px;
+  display: block;
 }
+.comment .comment-text {
+  color: var(--comment-text);
+  line-height: 1.4;
+}
+
+.comment-form {
+  padding: 20px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 12px;
+}
+.comment-input {
+  flex: 1;
+  border: 1px solid var(--border-color);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  min-width: 0;
+}
+.comment-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(74, 103, 226, 0.15);
+}
+.comment-btn {
+  border: none;
+  background: var(--accent);
+  color: white;
+  padding: 0 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+.comment-btn:hover {
+  background: #3a57d1;
+}
+
+.comments-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+}
+.comments-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
 .empty-state {
   text-align: center;
   color: var(--text-secondary);
@@ -317,8 +450,20 @@ header h1 {
   border-radius: 12px;
 }
 
+.empty-comments {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 40px 20px;
+  font-size: 0.9em;
+}
+
 /* --- Mobile-Friendly Adjustments --- */
 @media (max-width: 768px) {
+  .comments-panel {
+    width: 100%;
+    right: -100%;
+  }
+  
   body {
     font-size: 14px;
   }
@@ -370,18 +515,6 @@ header h1 {
     min-width: 25px;
     font-size: 1.1em;
   }
-  .comment-form {
-    flex-direction: column;
-    gap: 6px;
-  }
-  .comment-input {
-    font-size: 14px;
-    padding: 8px 12px;
-  }
-  .comment-btn {
-    padding: 8px 12px;
-    font-size: 14px;
-  }
   .suggestion-item {
     padding: 8px 12px;
     gap: 8px;
@@ -389,6 +522,14 @@ header h1 {
   .suggestion-item img {
     width: 30px;
     height: 45px;
+  }
+  .comments-toggle {
+    width: 32px;
+    height: 32px;
+  }
+  .comments-toggle svg {
+    width: 16px;
+    height: 16px;
   }
 }
 @media (max-width: 480px) {
@@ -438,20 +579,40 @@ header h1 {
   </div>
 
   <div class="item-list" id="item-list">
+  </div>
+</div>
+
+<!-- Comments Panel -->
+<div class="comments-overlay" id="comments-overlay"></div>
+<div class="comments-panel" id="comments-panel">
+  <div class="comments-header">
+    <h3 id="comments-title">Comments</h3>
+    <button class="close-comments" id="close-comments">
+      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
+  </div>
+  <div class="comments-content">
+    <div class="comments-list" id="comments-list-panel">
+      <div class="empty-comments">No comments yet. Be the first to share your thoughts!</div>
     </div>
+    <div class="comment-form">
+      <input type="text" class="comment-input" id="panel-comment-input" placeholder="Share your thoughts...">
+      <button class="comment-btn" id="panel-comment-btn">Post</button>
+    </div>
+  </div>
 </div>
 
 <script>
 /**
- * WatchRank Application - Final Version
- * Combines stable core with improved suggestion UX and mobile design.
+ * WatchRank Application - Improved Version
+ * Fixes autocomplete behavior, save issues, and improves comments UI
  */
 (() => {
   // ---------- 1. CONFIGURATION ----------
   const config = {
     SHEET_WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbyqXwU5IcX1xgZYPpjC0deL5vdH60NHyEqrIcbTVeWJzKqnNKU-ptCIpGT9HtrUuMM7/exec',
     TMDB_API_KEY: '269a5d47b3552e41b40624c646f09456',
-    POLL_INTERVAL_MS: 10000,
+    POLL_INTERVAL_MS: 15000, // Increased for better debugging
     SUGGESTION_DEBOUNCE_MS: 300,
   };
 
@@ -463,7 +624,8 @@ header h1 {
     isSaving: false,
     isSyncing: false,
     suggestionDebounceTimer: null,
-    selectedSuggestion: null, // <-- Key improvement: Store selected suggestion data
+    selectedSuggestion: null,
+    currentCommentsItemId: null,
   };
 
   // ---------- 3. DOM ELEMENT CACHE ----------
@@ -473,15 +635,32 @@ header h1 {
     itemList: document.getElementById('item-list'),
     suggestionsBox: document.getElementById('suggestions-box'),
     statusBar: document.getElementById('status'),
+    commentsPanel: document.getElementById('comments-panel'),
+    commentsOverlay: document.getElementById('comments-overlay'),
+    closeComments: document.getElementById('close-comments'),
+    commentsTitle: document.getElementById('comments-title'),
+    commentsListPanel: document.getElementById('comments-list-panel'),
+    panelCommentInput: document.getElementById('panel-comment-input'),
+    panelCommentBtn: document.getElementById('panel-comment-btn'),
   };
 
   // ---------- 4. UTILITY FUNCTIONS ----------
   const utils = {
-    safeJsonParse(str, fallback) { try { return JSON.parse(str); } catch (e) { return fallback; } },
+    safeJsonParse(str, fallback) { 
+      try { 
+        return JSON.parse(str); 
+      } catch (e) { 
+        console.warn('JSON parse error:', e, 'Input:', str);
+        return fallback; 
+      } 
+    },
     escapeHtml(str) {
       if (!str) return '';
       return String(str).replace(/[&<>"']/g, s => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s]));
     },
+    debugLog(message, data = null) {
+      console.log(`[WatchRank] ${message}`, data || '');
+    }
   };
 
   // ---------- 5. API & DATA HANDLING ----------
@@ -520,48 +699,97 @@ header h1 {
       if (state.isSyncing) return;
       state.isSyncing = true;
       ui.updateStatus('Syncing...');
+      
       try {
+        utils.debugLog('Loading items from backend...');
         const res = await fetch(config.SHEET_WEB_APP_URL);
-        if (!res.ok) throw new Error(`Network response not ok (${res.status})`);
-        const data = await res.json();
-        if (!Array.isArray(data)) throw new Error('Invalid data format from backend');
+        
+        if (!res.ok) {
+          throw new Error(`Network response not ok (${res.status}): ${res.statusText}`);
+        }
+        
+        const textResponse = await res.text();
+        utils.debugLog('Raw response:', textResponse.substring(0, 200) + '...');
+        
+        let data;
+        try {
+          data = JSON.parse(textResponse);
+        } catch (parseErr) {
+          console.error('Failed to parse response as JSON:', parseErr);
+          throw new Error('Invalid JSON response from backend');
+        }
+        
+        if (!Array.isArray(data)) {
+          console.error('Invalid data format:', data);
+          throw new Error('Backend returned non-array data');
+        }
         
         state.items = data.map(raw => ({
-            id: Number(raw.id),
-            title: raw.title || 'Untitled',
-            type: raw.type || 'Movie',
-            posterPath: raw.posterPath || null,
-            votes: Number(raw.votes) || 0,
-            voters: (typeof raw.voters === 'string') ? utils.safeJsonParse(raw.voters, {}) : (raw.voters || {}),
-            comments: (typeof raw.comments === 'string') ? utils.safeJsonParse(raw.comments, []) : (raw.comments || []),
+          id: Number(raw.id),
+          title: raw.title || 'Untitled',
+          type: raw.type || 'Movie',
+          posterPath: raw.posterPath || null,
+          votes: Number(raw.votes) || 0,
+          voters: (typeof raw.voters === 'string') ? utils.safeJsonParse(raw.voters, {}) : (raw.voters || {}),
+          comments: (typeof raw.comments === 'string') ? utils.safeJsonParse(raw.comments, []) : (raw.comments || []),
         }));
 
+        utils.debugLog(`Loaded ${state.items.length} items`);
         ui.render();
-        ui.updateStatus(`Synced at ${new Date().toLocaleTimeString()}`);
+        ui.updateStatus(`Synced ${state.items.length} items at ${new Date().toLocaleTimeString()}`);
+        
       } catch (err) {
         console.error('Error loading from sheet:', err);
-        ui.updateStatus('Sync failed.', true);
+        ui.updateStatus(`Sync failed: ${err.message}`, true);
       } finally {
         state.isSyncing = false;
       }
     },
     
     async saveItems() {
+      if (state.isSaving) return;
       state.isSaving = true;
       ui.updateStatus('Saving...');
+      
       try {
+        utils.debugLog('Saving items to backend...', state.items);
+        
+        const payload = { items: state.items };
         const res = await fetch(config.SHEET_WEB_APP_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
-          body: JSON.stringify({ items: state.items }),
+          headers: { 
+            'Content-Type': 'text/plain;charset=utf-8'
+          }, 
+          body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error(`Save failed (${res.status})`);
-        const result = await res.json();
-        if (result.status !== 'success') throw new Error('Backend returned an error.');
-        await this.loadItems();
+        
+        if (!res.ok) {
+          throw new Error(`Save failed (${res.status}): ${res.statusText}`);
+        }
+        
+        const textResponse = await res.text();
+        utils.debugLog('Save response:', textResponse);
+        
+        let result;
+        try {
+          result = JSON.parse(textResponse);
+        } catch (parseErr) {
+          console.error('Failed to parse save response:', parseErr);
+          throw new Error('Invalid response from backend after save');
+        }
+        
+        if (result.status !== 'success') {
+          throw new Error(result.message || 'Backend returned error status');
+        }
+        
+        ui.updateStatus('Saved successfully!');
+        
+        // Reload to ensure consistency
+        setTimeout(() => this.loadItems(), 1000);
+        
       } catch (err) {
         console.error('Error saving to sheet:', err);
-        ui.updateStatus('Save failed.', true);
+        ui.updateStatus(`Save failed: ${err.message}`, true);
       } finally {
         state.isSaving = false;
       }
@@ -573,6 +801,9 @@ header h1 {
     render() { 
       state.items.sort((a,b) => b.votes-a.votes); 
       this.renderItemList(); 
+      if (state.currentCommentsItemId) {
+        this.renderCommentsPanel();
+      }
     },
     
     renderItemList() { 
@@ -590,6 +821,9 @@ header h1 {
         const card = document.createElement('div'); 
         card.className = 'item-card'; 
         card.dataset.itemId = item.id; 
+        
+        const commentsCount = item.comments.length;
+        
         card.innerHTML = ` 
           <div class="item-card-rank">#${index + 1}</div> 
           <img src="${poster}" alt="${utils.escapeHtml(item.title)} Poster" class="item-card-poster" onerror="this.src='https://via.placeholder.com/80x120.png?text=No+Image'"> 
@@ -597,20 +831,20 @@ header h1 {
             <h2 class="item-card-title">${utils.escapeHtml(item.title)}</h2> 
             <div class="item-card-meta">${utils.escapeHtml(item.type)}</div> 
             <div class="item-card-voting"> 
-              <button class="vote-btn up ${userVote === 1 ? 'voted' : ''}" data-vote-type="up"><svg viewBox="0 0 24 24"><path d="M12 4l8 8h-6v8h-4v-8H4l8-8z"></path></svg></button> 
+              <button class="vote-btn up ${userVote === 1 ? 'voted' : ''}" data-vote-type="up">
+                <svg viewBox="0 0 24 24"><path d="M12 4l8 8h-6v8h-4v-8H4l8-8z"></path></svg>
+              </button> 
               <div class="vote-count ${voteClass}">${item.votes}</div> 
-              <button class="vote-btn down ${userVote === -1 ? 'voted' : ''}" data-vote-type="down"><svg viewBox="0 0 24 24"><path d="M12 20l-8-8h6V4h4v8h6l-8 8z"></path></svg></button> 
+              <button class="vote-btn down ${userVote === -1 ? 'voted' : ''}" data-vote-type="down">
+                <svg viewBox="0 0 24 24"><path d="M12 20l-8-8h6V4h4v8h6l-8 8z"></path></svg>
+              </button> 
             </div> 
-            <div class="comments-section"> 
-              <div class="comment-form"> 
-                <input type="text" class="comment-input" placeholder="Add a comment..." aria-label="Comment for ${utils.escapeHtml(item.title)}"> 
-                <button class="comment-btn">Post</button> 
-              </div> 
-              <div class="comments-list">${item.comments.map(c => 
-                `<div class="comment"><span class="comment-user">${utils.escapeHtml(c.user)}:</span> ${utils.escapeHtml(c.text)}</div>` 
-              ).join('')}</div> 
-            </div> 
-          </div>`; 
+          </div>
+          <button class="comments-toggle" data-item-id="${item.id}">
+            <svg viewBox="0 0 24 24"><path d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h11c.55 0 1-.45 1-1z"/></svg>
+            <div class="comments-count ${commentsCount > 0 ? 'visible' : ''}">${commentsCount}</div>
+          </button>
+        `; 
         fragment.appendChild(card); 
       }); 
       DOMElements.itemList.appendChild(fragment); 
@@ -629,7 +863,7 @@ header h1 {
         const el = document.createElement('div');
         el.className = 'suggestion-item';
         
-        // <-- Key improvement: Store all necessary data as data attributes
+        // Store all necessary data as data attributes
         el.dataset.id = s.id;
         el.dataset.mediaType = s.media_type;
         el.dataset.title = s.title || s.name;
@@ -660,9 +894,59 @@ header h1 {
       DOMElements.suggestionsBox.innerHTML = ''; 
     },
     
+    renderCommentsPanel() {
+      const item = state.items.find(i => i.id === state.currentCommentsItemId);
+      if (!item) return;
+      
+      DOMElements.commentsTitle.textContent = `Comments - ${item.title}`;
+      
+      if (item.comments.length === 0) {
+        DOMElements.commentsListPanel.innerHTML = '<div class="empty-comments">No comments yet. Be the first to share your thoughts!</div>';
+      } else {
+        DOMElements.commentsListPanel.innerHTML = item.comments.map(comment => `
+          <div class="comment">
+            <div class="comment-user">${utils.escapeHtml(comment.user)}</div>
+            <div class="comment-text">${utils.escapeHtml(comment.text)}</div>
+          </div>
+        `).join('');
+      }
+      
+      // Scroll to bottom of comments
+      DOMElements.commentsListPanel.scrollTop = DOMElements.commentsListPanel.scrollHeight;
+    },
+    
+    openCommentsPanel(itemId) {
+      state.currentCommentsItemId = itemId;
+      this.renderCommentsPanel();
+      DOMElements.commentsPanel.classList.add('open');
+      DOMElements.commentsOverlay.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+      
+      // Focus on comment input
+      setTimeout(() => {
+        DOMElements.panelCommentInput.focus();
+      }, 300);
+    },
+    
+    closeCommentsPanel() {
+      DOMElements.commentsPanel.classList.remove('open');
+      DOMElements.commentsOverlay.classList.remove('visible');
+      document.body.style.overflow = '';
+      state.currentCommentsItemId = null;
+    },
+    
     updateStatus(message, isError = false) { 
       DOMElements.statusBar.textContent = message; 
       DOMElements.statusBar.style.color = isError ? 'var(--downvote-color)' : 'var(--text-secondary)'; 
+      
+      // Clear status after delay if it's a success message
+      if (!isError && (message.includes('Saved') || message.includes('Synced'))) {
+        setTimeout(() => {
+          if (DOMElements.statusBar.textContent === message) {
+            DOMElements.statusBar.textContent = '';
+          }
+        }, 3000);
+      }
     },
     
     toggleAddButton(enabled, text = 'Add') { 
@@ -677,12 +961,12 @@ header h1 {
       const title = DOMElements.titleInput.value.trim();
       if (!title && !state.selectedSuggestion) return;
       
-      ui.toggleAddButton(false, '...');
+      ui.toggleAddButton(false, 'Adding...');
       
       try {
         let mediaData = null;
         
-        // <-- Key improvement: Prioritize using data from a clicked suggestion
+        // Prioritize using data from a clicked suggestion
         if (state.selectedSuggestion) {
           const { title: suggestedTitle, posterPath, mediaType } = state.selectedSuggestion;
           mediaData = {
@@ -690,18 +974,25 @@ header h1 {
             type: mediaType === 'movie' ? 'Movie' : 'TV Show',
             posterPath: posterPath ? `https://image.tmdb.org/t/p/w500${posterPath}` : null
           };
+          utils.debugLog('Using selected suggestion:', mediaData);
         } else {
-          // Fallback to searching if user just presses Enter
+          // Fallback to searching if user just typed and pressed Enter
+          utils.debugLog('Searching for:', title);
           const searchResults = await api.searchTMDB(title);
           const firstResult = searchResults.find(s => s.media_type === 'movie' || s.media_type === 'tv');
-          if (!firstResult) { throw new Error('Could not find that title. Try selecting from suggestions.'); }
+          if (!firstResult) { 
+            throw new Error('Could not find that title. Try selecting from the suggestions dropdown.'); 
+          }
           
           mediaData = await api.fetchTMDBDetails(firstResult.id, firstResult.media_type);
-          if (!mediaData) { throw new Error('Could not get details for that title.'); }
+          if (!mediaData) { 
+            throw new Error('Could not get details for that title.'); 
+          }
         }
         
+        // Check for duplicates
         if (state.items.some(i => i.title.toLowerCase() === mediaData.title.toLowerCase())) {
-          throw new Error(`${mediaData.title} is already on the list.`);
+          throw new Error(`"${mediaData.title}" is already on the list.`);
         }
         
         const newItem = {
@@ -714,16 +1005,21 @@ header h1 {
           comments: []
         };
         
+        utils.debugLog('Adding new item:', newItem);
+        
         state.items.push(newItem);
         DOMElements.titleInput.value = '';
         state.selectedSuggestion = null;
         ui.hideSuggestions();
         ui.render();
+        
+        // Save to backend
         await api.saveItems();
 
       } catch (err) {
         alert(err.message);
         console.error('Error adding item:', err);
+        ui.updateStatus(`Failed to add: ${err.message}`, true);
       } finally {
         ui.toggleAddButton(true);
       }
@@ -731,7 +1027,8 @@ header h1 {
     
     handleVote(e) {
       const button = e.target.closest('.vote-btn');
-      if (!button) return;
+      if (!button || state.isSaving) return;
+      
       const card = button.closest('.item-card');
       const itemId = Number(card.dataset.itemId);
       const voteType = button.dataset.voteType;
@@ -743,35 +1040,45 @@ header h1 {
       item.voters[state.userId] = (currentVote === voteValue) ? 0 : voteValue;
       item.votes = Object.values(item.voters).reduce((sum, vote) => sum + vote, 0);
       
+      utils.debugLog(`Vote: ${voteType} for "${item.title}", new total: ${item.votes}`);
+      
       ui.render();
       api.saveItems();
     },
     
-    handleAddComment(e) {
-      const button = e.target.closest('.comment-btn');
-      if (!button) return;
-      e.preventDefault(); // Prevent form submission behavior
+    handleAddComment() {
+      const text = DOMElements.panelCommentInput.value.trim();
+      if (!text || !state.currentCommentsItemId || state.isSaving) return;
       
-      const card = button.closest('.item-card');
-      const itemId = Number(card.dataset.itemId);
-      const input = card.querySelector('.comment-input');
-      const text = input.value.trim();
-      
-      if (!text) return;
-      
-      const item = state.items.find(i => i.id === itemId);
+      const item = state.items.find(i => i.id === state.currentCommentsItemId);
       if (!item) return;
       
-      item.comments.push({ user: state.userName, text: text, timestamp: Date.now() });
+      const newComment = { 
+        user: state.userName, 
+        text: text, 
+        timestamp: Date.now() 
+      };
       
-      input.value = '';
-      ui.render();
+      item.comments.push(newComment);
+      DOMElements.panelCommentInput.value = '';
+      
+      utils.debugLog(`Comment added to "${item.title}":`, newComment);
+      
+      ui.render(); // This will update both main list and comments panel
       api.saveItems();
+    },
+    
+    handleCommentsToggle(e) {
+      const button = e.target.closest('.comments-toggle');
+      if (!button) return;
+      
+      const itemId = Number(button.dataset.itemId);
+      ui.openCommentsPanel(itemId);
     },
     
     handleTitleInput() {
       clearTimeout(state.suggestionDebounceTimer);
-      state.selectedSuggestion = null; // <-- Key improvement: Reset selection on type
+      state.selectedSuggestion = null; // Reset selection on type
       
       const query = DOMElements.titleInput.value.trim();
       if (query.length < 3) {
@@ -785,29 +1092,34 @@ header h1 {
       }, config.SUGGESTION_DEBOUNCE_MS);
     },
     
-    handleSuggestionClick(e) {
+    async handleSuggestionClick(e) {
       const suggestionItem = e.target.closest('.suggestion-item');
       if (!suggestionItem) return;
       
-      // <-- Key improvement: Store the selected suggestion's data
+      // Store the selected suggestion's data
       state.selectedSuggestion = { ...suggestionItem.dataset };
       
       DOMElements.titleInput.value = state.selectedSuggestion.title;
       ui.hideSuggestions();
-      DOMElements.titleInput.focus();
+      
+      // Auto-add the item immediately when clicking suggestion
+      utils.debugLog('Auto-adding suggestion:', state.selectedSuggestion);
+      await handlers.handleAddItem();
     }
   };
 
   // ---------- 8. INITIALIZATION ----------
   function init() {
     if (!config.SHEET_WEB_APP_URL || !config.TMDB_API_KEY) { 
-      ui.updateStatus('Configuration Error.', true); 
+      ui.updateStatus('Configuration Error: Missing API keys', true); 
       return; 
     }
     
-    state.userId = localStorage.getItem('watchRankUserId') || `user_${Date.now()}${Math.random()}`;
+    // Generate or retrieve user ID
+    state.userId = localStorage.getItem('watchRankUserId') || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     localStorage.setItem('watchRankUserId', state.userId);
     
+    // Get or prompt for username
     state.userName = localStorage.getItem('watchRankUserName');
     if (!state.userName) { 
       const name = prompt('Enter a display name:', 'MovieFan'); 
@@ -815,27 +1127,51 @@ header h1 {
       localStorage.setItem('watchRankUserName', state.userName); 
     }
 
+    utils.debugLog('Initialized with user:', { id: state.userId, name: state.userName });
+
+    // Event listeners for main form
     DOMElements.addButton.addEventListener('click', handlers.handleAddItem);
     DOMElements.titleInput.addEventListener('input', handlers.handleTitleInput);
     DOMElements.titleInput.addEventListener('keypress', (e) => { 
-      if (e.key === 'Enter') { e.preventDefault(); handlers.handleAddItem(); } 
-    });
-    
-    DOMElements.itemList.addEventListener('click', e => { 
-      handlers.handleVote(e); 
-      handlers.handleAddComment(e); 
-    });
-    DOMElements.itemList.addEventListener('keypress', e => { 
-      if(e.key === 'Enter' && e.target.classList.contains('comment-input')) { 
-        e.preventDefault(); handlers.handleAddComment(e); 
+      if (e.key === 'Enter') { 
+        e.preventDefault(); 
+        handlers.handleAddItem(); 
       } 
     });
     
+    // Event listeners for item interactions
+    DOMElements.itemList.addEventListener('click', e => { 
+      handlers.handleVote(e); 
+      handlers.handleCommentsToggle(e);
+    });
+    
+    // Event listeners for suggestions
     DOMElements.suggestionsBox.addEventListener('click', handlers.handleSuggestionClick);
     document.addEventListener('click', (e) => { 
-      if (!e.target.closest('.add-item-form-container')) ui.hideSuggestions(); 
+      if (!e.target.closest('.add-item-form-container')) {
+        ui.hideSuggestions(); 
+      }
     });
 
+    // Event listeners for comments panel
+    DOMElements.closeComments.addEventListener('click', ui.closeCommentsPanel);
+    DOMElements.commentsOverlay.addEventListener('click', ui.closeCommentsPanel);
+    DOMElements.panelCommentBtn.addEventListener('click', handlers.handleAddComment);
+    DOMElements.panelCommentInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handlers.handleAddComment();
+      }
+    });
+
+    // ESC key to close comments panel
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && state.currentCommentsItemId) {
+        ui.closeCommentsPanel();
+      }
+    });
+
+    // Initial load and setup polling
     api.loadItems().then(() => {
       setInterval(() => {
         if (!state.isSaving && !state.isSyncing) {
@@ -845,6 +1181,7 @@ header h1 {
     });
   }
 
+  // Start the application
   document.addEventListener('DOMContentLoaded', init);
 })();
 </script>
