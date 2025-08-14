@@ -106,11 +106,15 @@
             items: [],
             userId: null,
             userName: 'Anonymous',
-            userVotes: {}, // local cache of user's votes
+            userVotes: {}, // local cache of user's votes (string keys -> numeric values)
             isSaving: false,
             isSyncing: false,
             lastSyncTime: null
         };
+
+        // ---------- Small helpers for key normalization ----------
+        function keyFor(id) { return String(id); }
+        function userKey() { return keyFor(state.userId); }
 
         // ---------- LocalStorage Utilities ----------
         function setLocalStorage(key, value) {
@@ -143,28 +147,63 @@
             }
         }
 
-        // ---------- Vote Management ----------
+        // ---------- Vote Management (fixed) ----------
         function getUserVoteFromStorage(itemId) {
-            return state.userVotes[itemId] || 0;
+            const k = keyFor(itemId);
+            return Number(state.userVotes[k]) || 0;
         }
 
         function setUserVoteInStorage(itemId, voteValue) {
-            state.userVotes[itemId] = voteValue;
+            const k = keyFor(itemId);
+            const v = Number(voteValue) || 0;
+            if (v === 0) {
+                // remove neutral votes to keep storage compact
+                if (Object.prototype.hasOwnProperty.call(state.userVotes, k)) delete state.userVotes[k];
+            } else {
+                state.userVotes[k] = v;
+            }
             setLocalStorage(CONFIG.STORAGE_KEYS.USER_VOTES, state.userVotes);
         }
 
+        function loadUserVotesFromStorage() {
+            const raw = getLocalStorage(CONFIG.STORAGE_KEYS.USER_VOTES, {});
+            state.userVotes = {};
+            if (raw && typeof raw === 'object') {
+                Object.entries(raw).forEach(([k, v]) => {
+                    const nk = keyFor(k);
+                    const nv = Number(v) || 0;
+                    if (nv !== 0) state.userVotes[nk] = nv;
+                });
+            }
+        }
+
         function syncUserVotesWithItems() {
-            // Ensure all user votes are reflected in the items
+            // Ensure all user votes are reflected in the items, normalize voters
+            const myKey = userKey();
             state.items.forEach(item => {
-                if (!item.voters) item.voters = {};
-                
-                // Check if we have a local vote for this item
+                if (!item.voters || typeof item.voters !== 'object') item.voters = {};
+
+                // Normalize existing voters object: string keys, numeric values, remove zeros
+                const normalized = {};
+                Object.entries(item.voters).forEach(([uk, uv]) => {
+                    const ukStr = keyFor(uk);
+                    const val = Number(uv) || 0;
+                    if (val !== 0) normalized[ukStr] = val;
+                });
+                item.voters = normalized;
+
+                // If we have a local cached vote for this item, prefer it (local overrides backend)
                 const localVote = getUserVoteFromStorage(item.id);
                 if (localVote !== 0) {
-                    item.voters[state.userId] = localVote;
+                    item.voters[myKey] = localVote;
+                } else {
+                    // if there's an entry for us that is zero (unlikely), remove it
+                    if (Object.prototype.hasOwnProperty.call(item.voters, myKey) && Number(item.voters[myKey]) === 0) {
+                        delete item.voters[myKey];
+                    }
                 }
-                
-                // Recalculate votes
+
+                // Recalculate votes deterministically
                 item.votes = Object.values(item.voters).reduce((s, v) => s + Number(v || 0), 0);
             });
         }
@@ -172,6 +211,23 @@
         function clearUserVotesCache() {
             state.userVotes = {};
             removeLocalStorage(CONFIG.STORAGE_KEYS.USER_VOTES);
+        }
+
+        // ---------- Save scheduling & serialization (to avoid race conditions) ----------
+        let saveInProgress = false;
+        let savePending = false;
+        let saveTimer = null;
+
+        function scheduleSave(delay = 400) {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                if (saveInProgress) {
+                    savePending = true;
+                    return;
+                }
+                // call saveWatchlist (it will set state.isSaving appropriately)
+                saveWatchlist().catch(err => console.error('Save failed:', err));
+            }, delay);
         }
 
         // ---------- Init ----------
@@ -187,21 +243,18 @@
         });
 
         function initializeUser() {
-            state.userId = getLocalStorage(CONFIG.STORAGE_KEYS.USER_ID);
-            if (!state.userId) {
-                state.userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                setLocalStorage(CONFIG.STORAGE_KEYS.USER_ID, state.userId);
+            let storedId = getLocalStorage(CONFIG.STORAGE_KEYS.USER_ID);
+            if (!storedId) {
+                storedId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                setLocalStorage(CONFIG.STORAGE_KEYS.USER_ID, storedId);
             }
+            state.userId = keyFor(storedId);
 
             const storedName = getLocalStorage(CONFIG.STORAGE_KEYS.USER_NAME);
             state.userName = storedName || 'MovieFan';
             if (!storedName) {
                 setLocalStorage(CONFIG.STORAGE_KEYS.USER_NAME, state.userName);
             }
-        }
-
-        function loadUserVotesFromStorage() {
-            state.userVotes = getLocalStorage(CONFIG.STORAGE_KEYS.USER_VOTES, {});
         }
 
         function bindUI() {
@@ -226,28 +279,24 @@
             watchlistContainer.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 const btn = e.target.closest('.vote-btn');
                 if (!btn) return;
-                
-                console.log('Vote button clicked');
-                
+
                 const itemElement = btn.closest('.watchlist-item');
                 if (!itemElement) {
                     console.error('Could not find watchlist item element');
                     return;
                 }
-                
+
                 const itemId = itemElement.dataset.itemId;
                 const voteType = btn.classList.contains('up') ? 'up' : 'down';
-                
-                console.log('Voting for item:', itemId, 'type:', voteType);
-                
-                // Prevent multiple rapid clicks
+
+                // Prevent multiple rapid clicks (UI-level)
                 if (btn.disabled) return;
                 btn.disabled = true;
                 setTimeout(() => { btn.disabled = false; }, 300);
-                
+
                 vote(itemId, voteType);
             });
         }
@@ -322,23 +371,24 @@
         }
 
         async function addToWatchlist(id, title, type, poster) {
-            if (state.items.find(it => it.id === id)) {
+            const idKey = keyFor(id);
+            if (state.items.find(it => keyFor(it.id) === idKey)) {
                 alert('already in your list!');
                 return;
             }
             const newItem = {
-                id: id,
+                id: idKey,
                 title: title,
                 type: type,
                 posterPath: poster,
                 votes: 0,
-                voters: {} // userId -> 1 | -1 | 0
+                voters: {} // userId -> 1 | -1
             };
             state.items.push(newItem);
-            
+
             // Cache the updated list
             setLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, state.items);
-            
+
             await saveWatchlist();
             renderWatchlist();
             document.getElementById('searchInput').value = '';
@@ -347,38 +397,41 @@
 
         // ---------- Enhanced Voting Logic ----------
         async function vote(itemId, voteType) {
-            console.log('Vote called:', itemId, voteType);
-            
-            const item = state.items.find(i => i.id === itemId);
+            // Find item by normalized id
+            const idKey = keyFor(itemId);
+            const item = state.items.find(i => keyFor(i.id) === idKey);
             if (!item) {
                 console.error('Item not found:', itemId);
                 return;
             }
 
             const voteValue = voteType === 'up' ? 1 : -1;
-            const currentVote = getUserVoteFromStorage(itemId);
-            
-            console.log('Current vote:', currentVote, 'New vote value:', voteValue);
-            
-            // Toggle logic: same vote -> neutral; else set to new vote
+            const currentVote = getUserVoteFromStorage(item.id);
+            // Toggle: same vote -> neutral (0), else set to new vote
             const newVote = (currentVote === voteValue) ? 0 : voteValue;
-            
-            console.log('Setting new vote:', newVote);
-            
-            // Update local vote storage FIRST
-            setUserVoteInStorage(itemId, newVote);
-            
-            // Initialize voters object if it doesn't exist
-            if (!item.voters) item.voters = {};
-            
-            // Update the item's voters
-            item.voters[state.userId] = newVote;
+
+            // Update local vote cache first (so UI rendering uses same source)
+            setUserVoteInStorage(item.id, newVote);
+
+            // Ensure voters object
+            if (!item.voters || typeof item.voters !== 'object') item.voters = {};
+
+            // Update item's voters: set or delete (if neutral)
+            if (newVote === 0) {
+                if (Object.prototype.hasOwnProperty.call(item.voters, userKey())) delete item.voters[userKey()];
+            } else {
+                item.voters[userKey()] = Number(newVote);
+            }
+
+            // Normalize/remove zero entries and ensure numeric values
+            Object.keys(item.voters).forEach(k => {
+                const nv = Number(item.voters[k]) || 0;
+                if (nv === 0) delete item.voters[k];
+                else item.voters[k] = nv;
+            });
 
             // Recalculate total votes for this item
             item.votes = Object.values(item.voters).reduce((s, v) => s + Number(v || 0), 0);
-            
-            console.log('Item votes after update:', item.votes);
-            console.log('All voters for item:', item.voters);
 
             // Sort by votes desc, then by title for consistency
             state.items.sort((a, b) => {
@@ -388,12 +441,12 @@
 
             // Update cache immediately
             setLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, state.items);
-            
+
             // Immediately update UI
             renderWatchlist();
-            
-            // Save to backend (don't await to keep UI responsive)
-            saveWatchlist().catch(err => console.error('Save failed:', err));
+
+            // Schedule a debounced/serialized save
+            scheduleSave();
         }
 
         // ---------- Load / Save ----------
@@ -401,20 +454,26 @@
             if (state.isSyncing) return;
             state.isSyncing = true;
             updateStatus('Syncing...');
-            
+
             try {
                 const res = await fetch(CONFIG.SHEET_WEB_APP_URL);
                 if (!res.ok) throw new Error(`Network response not ok (${res.status})`);
                 const data = await res.json();
                 if (!Array.isArray(data)) throw new Error('Invalid data format from backend');
 
-                // Load items from backend
+                // Load items from backend and normalize ids & voters
                 const backendItems = data.map(raw => {
-                    const voters = (typeof raw.voters === 'string') ? safeJsonParse(raw.voters, {}) : (raw.voters || {});
-                    // Ensure numeric values for votes stored in voters
-                    Object.keys(voters).forEach(k => { voters[k] = Number(voters[k]) || 0; });
+                    const votersRaw = (typeof raw.voters === 'string') ? safeJsonParse(raw.voters, {}) : (raw.voters || {});
+                    const voters = {};
+                    if (votersRaw && typeof votersRaw === 'object') {
+                        Object.entries(votersRaw).forEach(([k, v]) => {
+                            const nk = keyFor(k);
+                            const nv = Number(v) || 0;
+                            if (nv !== 0) voters[nk] = nv;
+                        });
+                    }
                     return {
-                        id: raw.id,
+                        id: keyFor(raw.id),
                         title: raw.title || 'Untitled',
                         type: raw.type || 'Movie',
                         posterPath: raw.posterPath || null,
@@ -423,10 +482,12 @@
                     };
                 });
 
-                // Merge with local votes and recalculate
+                // Replace state items with backend authoritative list
                 state.items = backendItems;
+
+                // Merge with local votes and recalculate
                 syncUserVotesWithItems();
-                
+
                 // Sort by votes desc, then by title
                 state.items.sort((a, b) => {
                     if (b.votes !== a.votes) return b.votes - a.votes;
@@ -440,14 +501,25 @@
 
                 renderWatchlist();
                 updateStatus(`Synced at ${state.lastSyncTime.toLocaleTimeString()}`);
-                
+
             } catch (err) {
                 console.error('Failed to load watchlist:', err);
-                
+
                 // Fallback to cached data
                 const cachedItems = getLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, []);
                 if (cachedItems.length > 0) {
                     state.items = cachedItems;
+                    // Ensure ids and voters normalized in cache
+                    state.items = state.items.map(it => {
+                        const votersRaw = (typeof it.voters === 'string') ? safeJsonParse(it.voters, {}) : (it.voters || {});
+                        const voters = {};
+                        Object.entries(votersRaw || {}).forEach(([k, v]) => {
+                            const nk = keyFor(k);
+                            const nv = Number(v) || 0;
+                            if (nv !== 0) voters[nk] = nv;
+                        });
+                        return { ...it, id: keyFor(it.id), voters, votes: 0 };
+                    });
                     syncUserVotesWithItems();
                     renderWatchlist();
                     updateStatus('Using cached data (sync failed)', true);
@@ -461,40 +533,65 @@
         }
 
         async function saveWatchlist() {
-            if (state.isSaving) return;
-            
+            // Prevent concurrent saves; serialize using saveInProgress/savePending
+            if (saveInProgress) {
+                savePending = true;
+                return;
+            }
+
+            saveInProgress = true;
             state.isSaving = true;
             updateStatus('Saving...');
-            
+
             try {
-                // Ensure user votes are synced before saving
+                // Ensure local votes are merged into items before sending
                 syncUserVotesWithItems();
-                
-                // Send items to backend (voters as object)
+
+                // Prepare a copy of items with zero votes removed from voters
+                const itemsToSend = state.items.map(it => {
+                    const voters = {};
+                    if (it.voters && typeof it.voters === 'object') {
+                        Object.entries(it.voters).forEach(([k, v]) => {
+                            const nv = Number(v) || 0;
+                            if (nv !== 0) voters[keyFor(k)] = nv;
+                        });
+                    }
+                    return {
+                        ...it,
+                        id: keyFor(it.id),
+                        voters
+                    };
+                });
+
                 const response = await fetch(CONFIG.SHEET_WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ items: state.items })
+                    body: JSON.stringify({ items: itemsToSend })
                 });
-                
+
                 if (!response.ok) throw new Error(`Save failed (${response.status})`);
                 const result = await response.json();
                 if (result.status !== 'success') throw new Error('Backend returned an error');
-                
+
                 // Update cache after successful save
                 setLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, state.items);
-                
-                // Optionally reload to get authoritative data from backend
-                // await loadWatchlist();
-                
+
             } catch (err) {
                 console.error('Failed to save watchlist:', err);
                 updateStatus('Save failed - using local data', true);
-                
-                // Even if save fails, we keep the local state
+
+                // Even if save fails, keep the local state
                 setLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, state.items);
             } finally {
+                saveInProgress = false;
                 state.isSaving = false;
+                // If a save was requested while we were saving, run it again immediately
+                if (savePending) {
+                    savePending = false;
+                    scheduleSave(0);
+                } else {
+                    updateStatus('Saved');
+                }
             }
         }
 
@@ -521,7 +618,7 @@
                 const voteClass = item.votes > 0 ? 'positive' : item.votes < 0 ? 'negative' : '';
                 const typeClass = item.type.toLowerCase().replace(/\s+/g, '');
                 const poster = item.posterPath || 'https://via.placeholder.com/300x450/dbdbdb/8e8e8e?text=no+poster';
-                
+
                 return `
                     <div class="watchlist-item" data-item-id="${escapeAttr(item.id)}">
                         <div class="item-header">
