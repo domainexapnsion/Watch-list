@@ -1,1169 +1,570 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WatchRank Mobile</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-/* --- Base Styles --- */
-:root {
-  --background: #f4f4f9;
-  --card-bg: #ffffff;
-  --text-primary: #1a1a1a;
-  --text-secondary: #666;
-  --accent: #4a67e2;
-  --border-color: #e0e0e0;
-  --upvote-color: #27ae60;
-  --downvote-color: #e74c3c;
-  --shadow: 0 4px 12px rgba(0,0,0,0.08);
-  --comment-bg: #f8f9fa;
-  --comment-text: #777;
-  --panel-bg: #ffffff;
-  --panel-shadow: 0 8px 32px rgba(0,0,0,0.12);
-}
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
-}
-html, body {
-  max-width: 100%;
-  overflow-x: hidden;
-  touch-action: manipulation;
-  height: 100%;
-}
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--background);
-  color: var(--text-primary);
-  line-height: 1.6;
-  font-size: 14px;
-}
-.container {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 12px;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-header {
-  text-align: center;
-  margin-bottom: 20px;
-  padding-top: 10px;
-}
-header h1 {
-  font-size: 1.8em;
-  font-weight: 700;
-}
-.status-bar {
-  font-size: 0.85em;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-  text-align: center;
-  min-height: 1.2em;
-  transition: color 0.3s;
-}
-
-/* --- Add Item Form & Suggestions --- */
-.add-item-form-container {
-  position: relative;
-  margin-bottom: 24px;
-  z-index: 100;
-}
-.add-item-form {
-  display: flex;
-  gap: 12px;
-  background: var(--card-bg);
-  padding: 12px;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-}
-#item-title-input {
-  flex-grow: 1;
-  border: 1px solid var(--border-color);
-  padding: 12px 14px;
-  border-radius: 8px;
-  font-size: 16px;
-  min-width: 0;
-  -webkit-appearance: none;
-}
-#item-title-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(74, 103, 226, 0.15);
-}
-#add-item-btn {
-  border: none;
-  background: var(--accent);
-  color: #fff;
-  padding: 0 20px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-}
-#add-item-btn:disabled {
-  background-color: var(--text-secondary);
-  cursor: not-allowed;
-}
-#suggestions-box {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--card-bg);
-  z-index: 10000;
-  display: none;
-  flex-direction: column;
-  overflow: hidden;
-}
-.suggestions-header {
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--card-bg);
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-.suggestions-header h2 {
-  font-size: 1.3em;
-}
-#close-suggestions-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
-}
-#close-suggestions-btn:hover {
-  background: var(--background);
-}
-#close-suggestions-btn svg {
-  width: 24px;
-  height: 24px;
-  fill: var(--text-secondary);
-}
-#suggestions-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 16px 16px;
-}
-.suggestion-item {
-  padding: 14px 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  word-break: break-word;
-  transition: background-color 0.2s;
-  border-bottom: 1px solid var(--border-color);
-}
-.suggestion-item:last-child {
-  border-bottom: none;
-}
-.suggestion-item:hover {
-  background-color: var(--background);
-}
-.suggestion-item img {
-  width: 50px;
-  height: 75px;
-  object-fit: cover;
-  border-radius: 4px;
-  background: #eee;
-  flex-shrink: 0;
-}
-.suggestion-item-content {
-  flex: 1;
-}
-.suggestion-item-title {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.suggestion-item-meta {
-  font-size: 0.85em;
-  color: var(--text-secondary);
-}
-
-/* --- Item List & Cards --- */
-.item-list {
-  display: grid;
-  gap: 16px;
-  width: 100%;
-  flex: 1;
-  overflow-y: auto;
-  padding-bottom: 20px;
-}
-.item-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: var(--card-bg);
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  width: 100%;
-  overflow: hidden;
-  position: relative;
-}
-.item-card-rank {
-  font-size: 1.3em;
-  font-weight: 700;
-  color: var(--text-secondary);
-  width: 30px;
-  text-align: center;
-  padding-top: 4px;
-  flex-shrink: 0;
-}
-.item-card-poster {
-  width: 60px;
-  height: 90px;
-  object-fit: cover;
-  border-radius: 8px;
-  background: #eee;
-  flex-shrink: 0;
-}
-.item-card-content {
-  min-width: 0;
-  flex-grow: 1;
-  overflow: hidden;
-}
-.item-card-title {
-  font-size: 1.1em;
-  font-weight: 600;
-  margin-bottom: 4px;
-  word-break: break-word;
-  hyphens: auto;
-}
-.item-card-meta {
-  font-size: 0.85em;
-  color: var(--text-secondary);
-  background: var(--background);
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-  margin-bottom: 12px;
-}
-.item-card-voting {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-.vote-btn {
-  background: none;
-  border: 1px solid var(--border-color);
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-.vote-btn svg {
-  width: 18px;
-  height: 18px;
-  fill: var(--text-secondary);
-}
-.vote-btn.up.voted {
-  background: var(--upvote-color);
-  border-color: var(--upvote-color);
-}
-.vote-btn.up.voted svg {
-  fill: white;
-}
-.vote-btn.down.voted {
-  background: var(--downvote-color);
-  border-color: var(--downvote-color);
-}
-.vote-btn.down.voted svg {
-  fill: white;
-}
-.vote-count {
-  font-size: 1.2em;
-  font-weight: 700;
-  min-width: 30px;
-  text-align: center;
-}
-.vote-count.positive {
-  color: var(--upvote-color);
-}
-.vote-count.negative {
-  color: var(--downvote-color);
-}
-
-/* --- Comments Button & Panel --- */
-.comments-toggle {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: 1px solid var(--border-color);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  z-index: 2;
-}
-.comments-toggle:hover {
-  background: var(--background);
-  border-color: var(--accent);
-}
-.comments-toggle svg {
-  width: 18px;
-  height: 18px;
-  fill: var(--text-secondary);
-  transition: transform 0.2s;
-}
-.comments-toggle.active svg {
-  transform: rotate(180deg);
-  fill: var(--accent);
-}
-.comments-toggle.active {
-  background: var(--accent);
-}
-.comments-toggle.active svg {
-  fill: white;
-}
-
-.comments-count {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: var(--accent);
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transform: scale(0.5);
-  transition: all 0.2s;
-}
-.comments-count.visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.comments-panel {
-  position: fixed;
-  top: 0;
-  right: -100%;
-  width: 100%;
-  height: 100vh;
-  background: var(--panel-bg);
-  box-shadow: var(--panel-shadow);
-  z-index: 1000;
-  transition: right 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-.comments-panel.open {
-  right: 0;
-}
-
-.comments-header {
-  padding: 20px;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.comments-header h3 {
-  font-size: 1.1em;
-  font-weight: 600;
-  margin: 0;
-}
-.close-comments {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
-}
-.close-comments:hover {
-  background: var(--background);
-}
-.close-comments svg {
-  width: 18px;
-  height: 18px;
-  fill: var(--text-secondary);
-}
-
-.comments-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.comments-list {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.comment {
-  background: var(--comment-bg);
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid #f0f0f0;
-  word-break: break-word;
-}
-.comment .comment-user {
-  font-weight: 600;
-  color: var(--accent);
-  margin-bottom: 4px;
-  display: block;
-}
-.comment .comment-text {
-  color: var(--comment-text);
-  line-height: 1.4;
-}
-
-.comment-form {
-  padding: 16px;
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  gap: 12px;
-}
-.comment-input {
-  flex: 1;
-  border: 1px solid var(--border-color);
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  min-width: 0;
-}
-.comment-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(74, 103, 226, 0.15);
-}
-.comment-btn {
-  border: none;
-  background: var(--accent);
-  color: white;
-  padding: 0 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-}
-.comment-btn:hover {
-  background: #3a57d1;
-}
-
-.comments-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s;
-}
-.comments-overlay.visible {
-  opacity: 1;
-  visibility: visible;
-}
-
-.empty-state {
-  text-align: center;
-  color: var(--text-secondary);
-  padding: 40px;
-  background: var(--card-bg);
-  border-radius: 12px;
-}
-
-.empty-comments {
-  text-align: center;
-  color: var(--text-secondary);
-  padding: 40px 20px;
-  font-size: 0.9em;
-}
-</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Watchlist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap" rel="stylesheet"/>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Kalam', cursive; background: #fafafa; color: #262626; min-height: 100vh; }
+        .header { background: white; border-bottom: 1px solid #dbdbdb; padding: 16px 20px; text-align: center; position: sticky; top:0; z-index:100; }
+        .header h1 { font-size: 24px; font-weight: 700; color: #262626; }
+        .status-bar { font-size: 14px; color: #8e8e8e; margin-top: 4px; min-height: 1.2em; }
+        .search-section { background: white; padding: 20px; border-bottom: 1px solid #dbdbdb; }
+        .search-container { display:flex; gap:8px; align-items:center; }
+        .search-input { flex:1; padding:12px 16px; border:1px solid #dbdbdb; border-radius:8px; font-size:16px; background:#fafafa; }
+        .search-input:focus { outline:none; border-color:#0095f6; background:white; }
+        .search-btn { padding:12px 20px; background:#0095f6; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition:background .2s;}
+        .search-btn:hover { background:#0078d4; }
+        .search-btn:disabled { background:#8e8e8e; cursor:not-allowed; }
+        .search-results { margin-top:16px; display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; }
+        .search-item { background:white; border-radius:8px; overflow:hidden; cursor:pointer; transition: transform .2s; border:1px solid #dbdbdb; display:flex; flex-direction:column; }
+        .search-item:hover { transform: scale(1.02); }
+        .search-item img { width:100%; height:240px; object-fit:cover; }
+        .search-item-info { padding:12px; text-align:center; }
+        .search-item h4 { font-size:14px; margin-bottom:4px; font-weight:600; line-height:1.2; }
+        .search-item .type { background:#0095f6; color:white; padding:4px 8px; border-radius:12px; font-size:12px; display:inline-block; font-weight:600; }
+        .watchlist { padding:20px; }
+        .watchlist h2 { font-size:20px; margin-bottom:16px; font-weight:700; text-align:center; }
+        .watchlist-item { background:white; border-radius:8px; margin-bottom:16px; border:1px solid #dbdbdb; overflow:hidden; }
+        .item-header { display:flex; align-items:center; padding:12px; }
+        .rank-number { background:#262626; color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; margin-right:12px; flex-shrink:0; }
+        .item-poster { width:70px; height:105px; object-fit:cover; border-radius:4px; margin-right:12px; flex-shrink:0; }
+        .item-info { flex:1; min-width:0; }
+        .item-title { font-weight:600; margin-bottom:4px; font-size:16px; }
+        .item-type { background:#e74c3c; color:white; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600; display:inline-block; }
+        .item-type.movie { background:#e74c3c; }
+        .item-type.tvshow { background:#3498db; }
+        .vote-section { display:flex; justify-content:center; align-items:center; padding:12px 16px; border-top:1px solid #efefef; background:#fafafa; }
+        .vote-buttons { display:flex; align-items:center; gap:16px; }
+        .vote-btn { background:none; border:1px solid #e0e0e0; width:44px; height:44px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; flex-shrink:0; }
+        .vote-btn svg { width:22px; height:22px; fill:#666; }
+        .vote-btn.up.voted { background:#27ae60; border-color:#27ae60; }
+        .vote-btn.up.voted svg { fill:white; }
+        .vote-btn.down.voted { background:#e74c3c; border-color:#e74c3c; }
+        .vote-btn.down.voted svg { fill:white; }
+        .vote-count { font-weight:700; color:#262626; margin:0 8px; min-width:40px; text-align:center; font-size:20px; }
+        .vote-count.positive { color:#27ae60; }
+        .vote-count.negative { color:#e74c3c; }
+        .loading { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; color:#8e8e8e; }
+        .loading-gif { width:40px; height:40px; margin-bottom:16px; }
+        .error { background:#fed7d7; color:#c53030; padding:12px; border-radius:8px; margin:16px; text-align:center; }
+        .empty-state { text-align:center; padding:40px 20px; color:#8e8e8e; background:white; border-radius:8px; border:1px solid #dbdbdb; }
+        .empty-state h3 { margin-bottom:8px; font-weight:600; }
+        @media (max-width:640px) {
+            .search-results { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-
-<div class="container">
-  <header>
-    <h1>WatchRank</h1>
-    <div class="status-bar" id="status"></div>
-  </header>
-
-  <div class="add-item-form-container">
-    <div class="add-item-form">
-      <input type="text" id="item-title-input" placeholder="Enter a movie or TV show..." autocomplete="off">
-      <button id="add-item-btn">Add</button>
+    <div class="header">
+        <h1>my watchlist</h1>
+        <div class="status-bar" id="status"></div>
     </div>
-    <div id="suggestions-box">
-      <div class="suggestions-header">
-        <h2>Select a title</h2>
-        <button id="close-suggestions-btn">
-          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        </button>
-      </div>
-      <div id="suggestions-list"></div>
+
+    <div class="search-section" id="searchSection">
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="search movies & shows..." id="searchInput" autocomplete="off">
+            <button class="search-btn" id="searchBtn">search</button>
+        </div>
+        <div id="searchResults" class="search-results"></div>
     </div>
-  </div>
 
-  <div class="item-list" id="item-list">
-    <div class="empty-state">Loading your watchlist...</div>
-  </div>
-</div>
-
-<!-- Comments Panel -->
-<div class="comments-overlay" id="comments-overlay"></div>
-<div class="comments-panel" id="comments-panel">
-  <div class="comments-header">
-    <h3 id="comments-title">Comments</h3>
-    <button class="close-comments" id="close-comments">
-      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-    </button>
-  </div>
-  <div class="comments-content">
-    <div class="comments-list" id="comments-list-panel">
-      <div class="empty-comments">No comments yet. Be the first to share your thoughts!</div>
+    <div class="watchlist">
+        <h2>ranked by votes</h2>
+        <div id="watchlistItems">
+            <div class="loading">
+                <svg class="loading-gif" viewBox="0 0 50 50">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="#0095f6" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                        <animate attributeName="stroke-array" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                        <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                    </circle>
+                </svg>
+                <p>loading your watchlist...</p>
+            </div>
+        </div>
     </div>
-    <div class="comment-form">
-      <input type="text" class="comment-input" id="panel-comment-input" placeholder="Share your thoughts...">
-      <button class="comment-btn" id="panel-comment-btn">Post</button>
-    </div>
-  </div>
-</div>
 
-<script>
-/**
- * WatchRank Application - Mobile Optimized Version
- */
-(() => {
-  // ---------- 1. CONFIGURATION ----------
-  const config = {
-    SHEET_WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbyqXwU5IcX1xgZYPpjC0deL5vdH60NHyEqrIcbTVeWJzKqnNKU-ptCIpGT9HtrUuMM7/exec',
-    TMDB_API_KEY: '269a5d47b3552e41b40624c646f09456',
-    POLL_INTERVAL_MS: 15000,
-    SUGGESTION_DEBOUNCE_MS: 300,
-  };
-
-  // ---------- 2. APPLICATION STATE ----------
-  const state = {
-    items: [],
-    userId: null,
-    userName: 'Anonymous',
-    isSaving: false,
-    isSyncing: false,
-    suggestionDebounceTimer: null,
-    selectedSuggestion: null,
-    currentCommentsItemId: null,
-  };
-
-  // ---------- 3. DOM ELEMENT CACHE ----------
-  const DOMElements = {
-    titleInput: document.getElementById('item-title-input'),
-    addButton: document.getElementById('add-item-btn'),
-    itemList: document.getElementById('item-list'),
-    suggestionsBox: document.getElementById('suggestions-box'),
-    suggestionsList: document.getElementById('suggestions-list'),
-    closeSuggestionsBtn: document.getElementById('close-suggestions-btn'),
-    statusBar: document.getElementById('status'),
-    commentsPanel: document.getElementById('comments-panel'),
-    commentsOverlay: document.getElementById('comments-overlay'),
-    closeComments: document.getElementById('close-comments'),
-    commentsTitle: document.getElementById('comments-title'),
-    commentsListPanel: document.getElementById('comments-list-panel'),
-    panelCommentInput: document.getElementById('panel-comment-input'),
-    panelCommentBtn: document.getElementById('panel-comment-btn'),
-  };
-
-  // ---------- 4. UTILITY FUNCTIONS ----------
-  const utils = {
-    safeJsonParse(str, fallback) { 
-      try { 
-        return JSON.parse(str); 
-      } catch (e) { 
-        console.warn('JSON parse error:', e, 'Input:', str);
-        return fallback; 
-      } 
-    },
-    escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/[&<>"']/g, s => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s]));
-    },
-    debugLog(message, data = null) {
-      console.log(`[WatchRank] ${message}`, data || '');
-    }
-  };
-
-  // ---------- 5. API & DATA HANDLING ----------
-  const api = {
-    async searchTMDB(query) {
-      const url = `https://api.themoviedb.org/3/search/multi?api_key=${config.TMDB_API_KEY}&query=${encodeURIComponent(query)}`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        return data.results || [];
-      } catch (err) {
-        console.error('TMDb Search Error:', err);
-        return [];
-      }
-    },
-    
-    async fetchTMDBDetails(id, mediaType) {
-      const url = `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${config.TMDB_API_KEY}`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        return {
-          title: data.title || data.name,
-          type: mediaType === 'movie' ? 'Movie' : 'TV Show',
-          posterPath: data.poster_path 
-            ? `https://image.tmdb.org/t/p/w500${data.poster_path}` 
-            : null
+    <script>
+        // Configuration
+        const CONFIG = {
+            SHEET_WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbyqXwU5IcX1xgZYPpjC0deL5vdH60NHyEqrIcbTVeWJzKqnNKU-ptCIpGT9HtrUuMM7/exec',
+            OMDB_API_KEY: '939703a0',
+            POLL_INTERVAL_MS: 10000,
+            STORAGE_KEYS: {
+                USER_ID: 'watchlistUserId',
+                USER_NAME: 'watchlistUserName',
+                USER_VOTES: 'watchlistUserVotes',
+                WATCHLIST_CACHE: 'watchlistCache',
+                LAST_SYNC: 'watchlistLastSync'
+            }
         };
-      } catch (err) {
-        console.error('TMDb Details Error:', err);
-        return null;
-      }
-    },
-    
-    async loadItems() {
-      if (state.isSyncing) return;
-      state.isSyncing = true;
-      ui.updateStatus('Syncing...');
-      
-      try {
-        utils.debugLog('Loading items from backend...');
-        const res = await fetch(config.SHEET_WEB_APP_URL);
-        
-        if (!res.ok) {
-          throw new Error(`Network response not ok (${res.status}): ${res.statusText}`);
-        }
-        
-        const textResponse = await res.text();
-        utils.debugLog('Raw response:', textResponse.substring(0, 200) + '...');
-        
-        let data;
-        try {
-          data = JSON.parse(textResponse);
-        } catch (parseErr) {
-          console.error('Failed to parse response as JSON:', parseErr);
-          throw new Error('Invalid JSON response from backend');
-        }
-        
-        if (!Array.isArray(data)) {
-          console.error('Invalid data format:', data);
-          throw new Error('Backend returned non-array data');
-        }
-        
-        state.items = data.map(raw => ({
-          id: Number(raw.id),
-          title: raw.title || 'Untitled',
-          type: raw.type || 'Movie',
-          posterPath: raw.posterPath || null,
-          votes: Number(raw.votes) || 0,
-          voters: (typeof raw.voters === 'string') ? utils.safeJsonParse(raw.voters, {}) : (raw.voters || {}),
-          comments: (typeof raw.comments === 'string') ? utils.safeJsonParse(raw.comments, []) : (raw.comments || []),
-        }));
 
-        utils.debugLog(`Loaded ${state.items.length} items`);
-        ui.render();
-        ui.updateStatus(`Synced ${state.items.length} items`);
-        
-      } catch (err) {
-        console.error('Error loading from sheet:', err);
-        ui.updateStatus(`Sync failed: ${err.message}`, true);
-      } finally {
-        state.isSyncing = false;
-      }
-    },
-    
-    async saveItems() {
-      if (state.isSaving) return;
-      state.isSaving = true;
-      ui.updateStatus('Saving...');
-      
-      try {
-        utils.debugLog('Saving items to backend...', state.items);
-        
-        const payload = { items: state.items };
-        const res = await fetch(config.SHEET_WEB_APP_URL, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'text/plain;charset=utf-8'
-          }, 
-          body: JSON.stringify(payload),
+        // Application state
+        const state = {
+            items: [],
+            userId: null,
+            userName: 'Anonymous',
+            userVotes: {}, // local cache of user's votes
+            isSaving: false,
+            isSyncing: false,
+            lastSyncTime: null
+        };
+
+        // ---------- LocalStorage Utilities ----------
+        function setLocalStorage(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+                return true;
+            } catch (e) {
+                console.error('Failed to save to localStorage:', e);
+                return false;
+            }
+        }
+
+        function getLocalStorage(key, defaultValue = null) {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : defaultValue;
+            } catch (e) {
+                console.error('Failed to read from localStorage:', e);
+                return defaultValue;
+            }
+        }
+
+        function removeLocalStorage(key) {
+            try {
+                localStorage.removeItem(key);
+                return true;
+            } catch (e) {
+                console.error('Failed to remove from localStorage:', e);
+                return false;
+            }
+        }
+
+        // ---------- Vote Management ----------
+        function getUserVoteFromStorage(itemId) {
+            return state.userVotes[itemId] || 0;
+        }
+
+        function setUserVoteInStorage(itemId, voteValue) {
+            state.userVotes[itemId] = voteValue;
+            setLocalStorage(CONFIG.STORAGE_KEYS.USER_VOTES, state.userVotes);
+        }
+
+        function syncUserVotesWithItems() {
+            // Ensure all user votes are reflected in the items
+            state.items.forEach(item => {
+                if (!item.voters) item.voters = {};
+                
+                // Check if we have a local vote for this item
+                const localVote = getUserVoteFromStorage(item.id);
+                if (localVote !== 0) {
+                    item.voters[state.userId] = localVote;
+                }
+                
+                // Recalculate votes
+                item.votes = Object.values(item.voters).reduce((s, v) => s + Number(v || 0), 0);
+            });
+        }
+
+        function clearUserVotesCache() {
+            state.userVotes = {};
+            removeLocalStorage(CONFIG.STORAGE_KEYS.USER_VOTES);
+        }
+
+        // ---------- Init ----------
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeUser();
+            loadUserVotesFromStorage();
+            bindUI();
+            loadWatchlist();
+            // Polling
+            setInterval(() => {
+                if (!state.isSaving && !state.isSyncing) loadWatchlist();
+            }, CONFIG.POLL_INTERVAL_MS);
         });
-        
-        if (!res.ok) {
-          throw new Error(`Save failed (${res.status}): ${res.statusText}`);
-        }
-        
-        const textResponse = await res.text();
-        utils.debugLog('Save response:', textResponse);
-        
-        let result;
-        try {
-          result = JSON.parse(textResponse);
-        } catch (parseErr) {
-          console.error('Failed to parse save response:', parseErr);
-          throw new Error('Invalid response from backend after save');
-        }
-        
-        if (result.status !== 'success') {
-          throw new Error(result.message || 'Backend returned error status');
-        }
-        
-        ui.updateStatus('Saved successfully!');
-        
-        // Reload to ensure consistency
-        setTimeout(() => this.loadItems(), 1000);
-        
-      } catch (err) {
-        console.error('Error saving to sheet:', err);
-        ui.updateStatus(`Save failed: ${err.message}`, true);
-      } finally {
-        state.isSaving = false;
-      }
-    },
-  };
-  
-  // ---------- 6. UI & RENDERING ----------
-  const ui = {
-    render() { 
-      state.items.sort((a,b) => b.votes-a.votes); 
-      this.renderItemList(); 
-      if (state.currentCommentsItemId) {
-        this.renderCommentsPanel();
-      }
-    },
-    
-    renderItemList() { 
-      DOMElements.itemList.innerHTML = ''; 
-      if (state.items.length === 0) { 
-        DOMElements.itemList.innerHTML = `<p class="empty-state">The list is empty. Add a movie or show to get started!</p>`; 
-        return; 
-      } 
-      
-      const fragment = document.createDocumentFragment(); 
-      state.items.forEach((item, index) => { 
-        const userVote = item.voters[state.userId] || 0; 
-        const voteClass = item.votes > 0 ? 'positive' : item.votes < 0 ? 'negative' : ''; 
-        const poster = item.posterPath || 'https://via.placeholder.com/80x120.png?text=No+Image'; 
-        const card = document.createElement('div'); 
-        card.className = 'item-card'; 
-        card.dataset.itemId = item.id; 
-        
-        const commentsCount = item.comments.length;
-        
-        card.innerHTML = ` 
-          <div class="item-card-rank">#${index + 1}</div> 
-          <img src="${poster}" alt="${utils.escapeHtml(item.title)} Poster" class="item-card-poster" onerror="this.src='https://via.placeholder.com/80x120.png?text=No+Image'"> 
-          <div class="item-card-content"> 
-            <h2 class="item-card-title">${utils.escapeHtml(item.title)}</h2> 
-            <div class="item-card-meta">${utils.escapeHtml(item.type)}</div> 
-            <div class="item-card-voting"> 
-              <button class="vote-btn up ${userVote === 1 ? 'voted' : ''}" data-vote-type="up">
-                <svg viewBox="0 0 24 24"><path d="M12 4l8 8h-6v8h-4v-8H4l8-8z"></path></svg>
-              </button> 
-              <div class="vote-count ${voteClass}">${item.votes}</div> 
-              <button class="vote-btn down ${userVote === -1 ? 'voted' : ''}" data-vote-type="down">
-                <svg viewBox="0 0 24 24"><path d="M12 20l-8-8h6V4h4v8h6l-8 8z"></path></svg>
-              </button> 
-            </div> 
-          </div>
-          <button class="comments-toggle" data-item-id="${item.id}">
-            <svg viewBox="0 0 24 24"><path d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h11c.55 0 1-.45 1-1z"/></svg>
-            <div class="comments-count ${commentsCount > 0 ? 'visible' : ''}">${commentsCount}</div>
-          </button>
-        `; 
-        fragment.appendChild(card); 
-      }); 
-      DOMElements.itemList.appendChild(fragment); 
-    },
-    
-    renderSuggestions(suggestions) {
-      DOMElements.suggestionsList.innerHTML = '';
-      const relevantSuggestions = suggestions
-        .filter(s => s.media_type === 'movie' || s.media_type === 'tv')
-        .slice(0, 8);
-      
-      if (relevantSuggestions.length === 0) {
-        DOMElements.suggestionsList.innerHTML = '<p class="empty-state">No results found</p>';
-        return;
-      }
-      
-      const fragment = document.createDocumentFragment();
-      relevantSuggestions.forEach(s => {
-        const el = document.createElement('div');
-        el.className = 'suggestion-item';
-        
-        // Store all necessary data as data attributes
-        el.dataset.id = s.id;
-        el.dataset.mediaType = s.media_type;
-        el.dataset.title = s.title || s.name;
-        el.dataset.posterPath = s.poster_path;
-        
-        const title = s.title || s.name;
-        const year = (s.release_date || s.first_air_date)?.substring(0,4) || 'N/A';
-        const poster = s.poster_path 
-          ? `https://image.tmdb.org/t/p/w92${s.poster_path}` 
-          : 'https://via.placeholder.com/50x75.png?text=N/A';
-        
-        el.innerHTML = `
-          <img src="${poster}" alt="poster">
-          <div class="suggestion-item-content">
-            <div class="suggestion-item-title">${utils.escapeHtml(title)}</div>
-            <div class="suggestion-item-meta">${utils.escapeHtml(s.media_type === 'tv' ? 'TV Show' : 'Movie')} • ${year}</div>
-          </div>
-        `;
-        fragment.appendChild(el);
-      });
-      
-      DOMElements.suggestionsList.appendChild(fragment);
-      DOMElements.suggestionsBox.style.display = 'flex';
-    },
-    
-    hideSuggestions() { 
-      DOMElements.suggestionsBox.style.display = 'none'; 
-      DOMElements.suggestionsList.innerHTML = '';
-    },
-    
-    renderCommentsPanel() {
-      const item = state.items.find(i => i.id === state.currentCommentsItemId);
-      if (!item) return;
-      
-      DOMElements.commentsTitle.textContent = `Comments - ${item.title}`;
-      
-      if (item.comments.length === 0) {
-        DOMElements.commentsListPanel.innerHTML = '<div class="empty-comments">No comments yet. Be the first to share your thoughts!</div>';
-      } else {
-        DOMElements.commentsListPanel.innerHTML = item.comments.map(comment => `
-          <div class="comment">
-            <div class="comment-user">${utils.escapeHtml(comment.user)}</div>
-            <div class="comment-text">${utils.escapeHtml(comment.text)}</div>
-          </div>
-        `).join('');
-      }
-      
-      // Scroll to bottom of comments
-      DOMElements.commentsListPanel.scrollTop = DOMElements.commentsListPanel.scrollHeight;
-    },
-    
-    openCommentsPanel(itemId) {
-      state.currentCommentsItemId = itemId;
-      this.renderCommentsPanel();
-      DOMElements.commentsPanel.classList.add('open');
-      DOMElements.commentsOverlay.classList.add('visible');
-      document.body.style.overflow = 'hidden';
-      
-      // Focus on comment input
-      setTimeout(() => {
-        DOMElements.panelCommentInput.focus();
-      }, 300);
-    },
-    
-    closeCommentsPanel() {
-      DOMElements.commentsPanel.classList.remove('open');
-      DOMElements.commentsOverlay.classList.remove('visible');
-      document.body.style.overflow = '';
-      state.currentCommentsItemId = null;
-    },
-    
-    updateStatus(message, isError = false) { 
-      DOMElements.statusBar.textContent = message; 
-      DOMElements.statusBar.style.color = isError ? 'var(--downvote-color)' : 'var(--text-secondary)'; 
-      
-      // Clear status after delay if it's a success message
-      if (!isError && (message.includes('Saved') || message.includes('Synced'))) {
-        setTimeout(() => {
-          if (DOMElements.statusBar.textContent === message) {
-            DOMElements.statusBar.textContent = '';
-          }
-        }, 3000);
-      }
-    },
-    
-    toggleAddButton(enabled, text = 'Add') { 
-      DOMElements.addButton.disabled = !enabled; 
-      DOMElements.addButton.textContent = text; 
-    },
-  };
 
-  // ---------- 7. EVENT HANDLERS ----------
-  const handlers = {
-    async handleAddItem() {
-      const title = DOMElements.titleInput.value.trim();
-      if (!title && !state.selectedSuggestion) return;
-      
-      ui.toggleAddButton(false, 'Adding...');
-      
-      try {
-        let mediaData = null;
-        
-        // Prioritize using data from a clicked suggestion
-        if (state.selectedSuggestion) {
-          const { title: suggestedTitle, posterPath, mediaType } = state.selectedSuggestion;
-          mediaData = {
-            title: suggestedTitle,
-            type: mediaType === 'movie' ? 'Movie' : 'TV Show',
-            posterPath: posterPath ? `https://image.tmdb.org/t/p/w500${posterPath}` : null
-          };
-          utils.debugLog('Using selected suggestion:', mediaData);
-        } else {
-          // Fallback to searching if user just typed and pressed Enter
-          utils.debugLog('Searching for:', title);
-          const searchResults = await api.searchTMDB(title);
-          const firstResult = searchResults.find(s => s.media_type === 'movie' || s.media_type === 'tv');
-          if (!firstResult) { 
-            throw new Error('Could not find that title. Try selecting from the suggestions dropdown.'); 
-          }
-          
-          mediaData = await api.fetchTMDBDetails(firstResult.id, firstResult.media_type);
-          if (!mediaData) { 
-            throw new Error('Could not get details for that title.'); 
-          }
+        function initializeUser() {
+            state.userId = getLocalStorage(CONFIG.STORAGE_KEYS.USER_ID);
+            if (!state.userId) {
+                state.userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                setLocalStorage(CONFIG.STORAGE_KEYS.USER_ID, state.userId);
+            }
+
+            const storedName = getLocalStorage(CONFIG.STORAGE_KEYS.USER_NAME);
+            state.userName = storedName || 'MovieFan';
+            if (!storedName) {
+                setLocalStorage(CONFIG.STORAGE_KEYS.USER_NAME, state.userName);
+            }
         }
-        
-        // Check for duplicates
-        if (state.items.some(i => i.title.toLowerCase() === mediaData.title.toLowerCase())) {
-          throw new Error(`"${mediaData.title}" is already on the list.`);
+
+        function loadUserVotesFromStorage() {
+            state.userVotes = getLocalStorage(CONFIG.STORAGE_KEYS.USER_VOTES, {});
         }
-        
-        const newItem = {
-          id: Date.now(),
-          title: mediaData.title,
-          type: mediaData.type,
-          posterPath: mediaData.posterPath,
-          votes: 0,
-          voters: {},
-          comments: []
+
+        function bindUI() {
+            const searchBtn = document.getElementById('searchBtn');
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            const watchlistContainer = document.getElementById('watchlistItems');
+
+            searchBtn.addEventListener('click', searchMovies);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); searchMovies(); }
+            });
+
+            // Delegated click for adding item from search results
+            searchResults.addEventListener('click', (e) => {
+                const item = e.target.closest('.search-item');
+                if (!item) return;
+                addToWatchlist(item.dataset.id, item.dataset.title, item.dataset.type, item.dataset.poster);
+            });
+
+            // Delegated click for voting in the watchlist area
+            watchlistContainer.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const btn = e.target.closest('.vote-btn');
+                if (!btn) return;
+                
+                console.log('Vote button clicked');
+                
+                const itemElement = btn.closest('.watchlist-item');
+                if (!itemElement) {
+                    console.error('Could not find watchlist item element');
+                    return;
+                }
+                
+                const itemId = itemElement.dataset.itemId;
+                const voteType = btn.classList.contains('up') ? 'up' : 'down';
+                
+                console.log('Voting for item:', itemId, 'type:', voteType);
+                
+                // Prevent multiple rapid clicks
+                if (btn.disabled) return;
+                btn.disabled = true;
+                setTimeout(() => { btn.disabled = false; }, 300);
+                
+                vote(itemId, voteType);
+            });
+        }
+
+        function updateStatus(message, isError = false) {
+            const statusBar = document.getElementById('status');
+            statusBar.textContent = message;
+            statusBar.style.color = isError ? '#ed4956' : '#8e8e8e';
+        }
+
+        // ---------- Search / Add ----------
+        async function searchMovies() {
+            const q = document.getElementById('searchInput').value.trim();
+            if (!q) return;
+            const btn = document.getElementById('searchBtn');
+            btn.disabled = true;
+            btn.textContent = '...';
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = '<div class="loading"><svg class="loading-gif" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#0095f6" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.416" stroke-dashoffset="31.416"></circle></svg><p>searching...</p></div>';
+
+            try {
+                const results = await searchOMDB(q);
+                displaySearchResults(results);
+            } catch (err) {
+                resultsContainer.innerHTML = `<div class="error">couldn't find anything for "${escapeHtml(q)}"</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'search';
+            }
+        }
+
+        async function searchOMDB(query) {
+            const url = `https://www.omdbapi.com/?apikey=${CONFIG.OMDB_API_KEY}&s=${encodeURIComponent(query)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            if (!data.Search) throw new Error('No results');
+            return data.Search.slice(0, 6).map(item => ({
+                id: `omdb_${item.imdbID}`,
+                title: item.Title,
+                year: item.Year,
+                type: item.Type === 'series' ? 'TV Show' : 'Movie',
+                poster: item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450/dbdbdb/8e8e8e?text=no+poster',
+                imdbId: item.imdbID
+            }));
+        }
+
+        function displaySearchResults(results) {
+            const container = document.getElementById('searchResults');
+            if (!results || results.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>nothing found</h3><p>try a different search</p></div>';
+                return;
+            }
+
+            container.innerHTML = results.map(item => `
+                <div class="search-item" data-id="${escapeAttr(item.id)}" data-title="${escapeAttr(item.title)}" data-type="${escapeAttr(item.type)}" data-poster="${escapeAttr(item.poster)}">
+                    <img src="${escapeAttr(item.poster)}" alt="${escapeAttr(item.title)}" onerror="this.src='https://via.placeholder.com/300x450/dbdbdb/8e8e8e?text=no+poster'">
+                    <div class="search-item-info">
+                        <h4>${escapeHtml(item.title)} (${escapeHtml(item.year)})</h4>
+                        <div class="type">${escapeHtml(item.type)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const d = document.createElement('div');
+            d.textContent = text || '';
+            return d.innerHTML;
+        }
+        function escapeAttr(text) {
+            return String(text || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        async function addToWatchlist(id, title, type, poster) {
+            if (state.items.find(it => it.id === id)) {
+                alert('already in your list!');
+                return;
+            }
+            const newItem = {
+                id: id,
+                title: title,
+                type: type,
+                posterPath: poster,
+                votes: 0,
+                voters: {} // userId -> 1 | -1 | 0
+            };
+            state.items.push(newItem);
+            
+            // Cache the updated list
+            setLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, state.items);
+            
+            await saveWatchlist();
+            renderWatchlist();
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+        }
+
+        // ---------- Enhanced Voting Logic ----------
+        async function vote(itemId, voteType) {
+            console.log('Vote called:', itemId, voteType);
+            
+            const item = state.items.find(i => i.id === itemId);
+            if (!item) {
+                console.error('Item not found:', itemId);
+                return;
+            }
+
+            const voteValue = voteType === 'up' ? 1 : -1;
+            const currentVote = getUserVoteFromStorage(itemId);
+            
+            console.log('Current vote:', currentVote, 'New vote value:', voteValue);
+            
+            // Toggle logic: same vote -> neutral; else set to new vote
+            const newVote = (currentVote === voteValue) ? 0 : voteValue;
+            
+            console.log('Setting new vote:', newVote);
+            
+            // Update local vote storage FIRST
+            setUserVoteInStorage(itemId, newVote);
+            
+            // Initialize voters object if it doesn't exist
+            if (!item.voters) item.voters = {};
+            
+            // Update the item's voters
+            item.voters[state.userId] = newVote;
+
+            // Recalculate total votes for this item
+            item.votes = Object.values(item.voters).reduce((s, v) => s + Number(v || 0), 0);
+            
+            console.log('Item votes after update:', item.votes);
+            console.log('All voters for item:', item.voters);
+
+            // Sort by votes desc, then by title for consistency
+            state.items.sort((a, b) => {
+                if (b.votes !== a.votes) return b.votes - a.votes;
+                return a.title.localeCompare(b.title);
+            });
+
+            // Update cache immediately
+            setLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, state.items);
+            
+            // Immediately update UI
+            renderWatchlist();
+            
+            // Save to backend (don't await to keep UI responsive)
+            saveWatchlist().catch(err => console.error('Save failed:', err));
+        }
+
+        // ---------- Load / Save ----------
+        async function loadWatchlist() {
+            if (state.isSyncing) return;
+            state.isSyncing = true;
+            updateStatus('Syncing...');
+            
+            try {
+                const res = await fetch(CONFIG.SHEET_WEB_APP_URL);
+                if (!res.ok) throw new Error(`Network response not ok (${res.status})`);
+                const data = await res.json();
+                if (!Array.isArray(data)) throw new Error('Invalid data format from backend');
+
+                // Load items from backend
+                const backendItems = data.map(raw => {
+                    const voters = (typeof raw.voters === 'string') ? safeJsonParse(raw.voters, {}) : (raw.voters || {});
+                    // Ensure numeric values for votes stored in voters
+                    Object.keys(voters).forEach(k => { voters[k] = Number(voters[k]) || 0; });
+                    return {
+                        id: raw.id,
+                        title: raw.title || 'Untitled',
+                        type: raw.type || 'Movie',
+                        posterPath: raw.posterPath || null,
+                        voters: voters,
+                        votes: 0 // Will be recalculated
+                    };
+                });
+
+                // Merge with local votes and recalculate
+                state.items = backendItems;
+                syncUserVotesWithItems();
+                
+                // Sort by votes desc, then by title
+                state.items.sort((a, b) => {
+                    if (b.votes !== a.votes) return b.votes - a.votes;
+                    return a.title.localeCompare(b.title);
+                });
+
+                // Update cache and sync time
+                setLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, state.items);
+                state.lastSyncTime = new Date();
+                setLocalStorage(CONFIG.STORAGE_KEYS.LAST_SYNC, state.lastSyncTime);
+
+                renderWatchlist();
+                updateStatus(`Synced at ${state.lastSyncTime.toLocaleTimeString()}`);
+                
+            } catch (err) {
+                console.error('Failed to load watchlist:', err);
+                
+                // Fallback to cached data
+                const cachedItems = getLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, []);
+                if (cachedItems.length > 0) {
+                    state.items = cachedItems;
+                    syncUserVotesWithItems();
+                    renderWatchlist();
+                    updateStatus('Using cached data (sync failed)', true);
+                } else {
+                    updateStatus('Sync failed', true);
+                    renderWatchlist();
+                }
+            } finally {
+                state.isSyncing = false;
+            }
+        }
+
+        async function saveWatchlist() {
+            if (state.isSaving) return;
+            
+            state.isSaving = true;
+            updateStatus('Saving...');
+            
+            try {
+                // Ensure user votes are synced before saving
+                syncUserVotesWithItems();
+                
+                // Send items to backend (voters as object)
+                const response = await fetch(CONFIG.SHEET_WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ items: state.items })
+                });
+                
+                if (!response.ok) throw new Error(`Save failed (${response.status})`);
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error('Backend returned an error');
+                
+                // Update cache after successful save
+                setLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, state.items);
+                
+                // Optionally reload to get authoritative data from backend
+                // await loadWatchlist();
+                
+            } catch (err) {
+                console.error('Failed to save watchlist:', err);
+                updateStatus('Save failed - using local data', true);
+                
+                // Even if save fails, we keep the local state
+                setLocalStorage(CONFIG.STORAGE_KEYS.WATCHLIST_CACHE, state.items);
+            } finally {
+                state.isSaving = false;
+            }
+        }
+
+        function safeJsonParse(str, fallback) {
+            try { return JSON.parse(str); } catch (e) { return fallback; }
+        }
+
+        // ---------- Render ----------
+        function renderWatchlist() {
+            const container = document.getElementById('watchlistItems');
+            if (!state.items || state.items.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>your list is empty</h3>
+                        <p>search & add some movies or shows!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = state.items.map((item, index) => {
+                // Get user vote from local storage for reliability
+                const userVote = getUserVoteFromStorage(item.id);
+                const voteClass = item.votes > 0 ? 'positive' : item.votes < 0 ? 'negative' : '';
+                const typeClass = item.type.toLowerCase().replace(/\s+/g, '');
+                const poster = item.posterPath || 'https://via.placeholder.com/300x450/dbdbdb/8e8e8e?text=no+poster';
+                
+                return `
+                    <div class="watchlist-item" data-item-id="${escapeAttr(item.id)}">
+                        <div class="item-header">
+                            <div class="rank-number">${index + 1}</div>
+                            <img src="${escapeAttr(poster)}" alt="${escapeAttr(item.title)}" class="item-poster" onerror="this.src='https://via.placeholder.com/300x450/dbdbdb/8e8e8e?text=no+poster'">
+                            <div class="item-info">
+                                <div class="item-title">${escapeHtml(item.title)}</div>
+                                <div class="item-type ${typeClass}">${escapeHtml(item.type)}</div>
+                            </div>
+                        </div>
+                        <div class="vote-section">
+                            <div class="vote-buttons">
+                                <button class="vote-btn up ${userVote === 1 ? 'voted' : ''}" aria-label="Upvote">
+                                    <svg viewBox="0 0 24 24"><path d="M12 4l8 8h-6v8h-4v-8H4l8-8z"></path></svg>
+                                </button>
+                                <div class="vote-count ${voteClass}">${item.votes}</div>
+                                <button class="vote-btn down ${userVote === -1 ? 'voted' : ''}" aria-label="Downvote">
+                                    <svg viewBox="0 0 24 24"><path d="M12 20l-8-8h6V4h4v8h6l-8 8z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ---------- Debug Functions (for development) ----------
+        window.debugWatchlist = {
+            clearAllData() {
+                Object.values(CONFIG.STORAGE_KEYS).forEach(key => {
+                    removeLocalStorage(key);
+                });
+                state.userVotes = {};
+                state.items = [];
+                console.log('All localStorage data cleared');
+            },
+            showUserVotes() {
+                console.log('User votes:', state.userVotes);
+            },
+            showItems() {
+                console.log('Items:', state.items);
+            }
         };
-        
-        utils.debugLog('Adding new item:', newItem);
-        
-        state.items.push(newItem);
-        DOMElements.titleInput.value = '';
-        state.selectedSuggestion = null;
-        ui.hideSuggestions();
-        ui.render();
-        
-        // Save to backend
-        await api.saveItems();
-
-      } catch (err) {
-        alert(err.message);
-        console.error('Error adding item:', err);
-        ui.updateStatus(`Failed to add: ${err.message}`, true);
-      } finally {
-        ui.toggleAddButton(true);
-      }
-    },
-    
-    handleVote(e) {
-      const button = e.target.closest('.vote-btn');
-      if (!button || state.isSaving) return;
-      
-      const card = button.closest('.item-card');
-      const itemId = Number(card.dataset.itemId);
-      const voteType = button.dataset.voteType;
-      const item = state.items.find(i => i.id === itemId);
-      if (!item) return;
-      
-      const voteValue = voteType === 'up' ? 1 : -1;
-      const currentVote = item.voters[state.userId] || 0;
-      item.voters[state.userId] = (currentVote === voteValue) ? 0 : voteValue;
-      item.votes = Object.values(item.voters).reduce((sum, vote) => sum + vote, 0);
-      
-      utils.debugLog(`Vote: ${voteType} for "${item.title}", new total: ${item.votes}`);
-      
-      ui.render();
-      api.saveItems();
-    },
-    
-    handleAddComment() {
-      const text = DOMElements.panelCommentInput.value.trim();
-      if (!text || !state.currentCommentsItemId || state.isSaving) return;
-      
-      const item = state.items.find(i => i.id === state.currentCommentsItemId);
-      if (!item) return;
-      
-      const newComment = { 
-        user: state.userName, 
-        text: text, 
-        timestamp: Date.now() 
-      };
-      
-      item.comments.push(newComment);
-      DOMElements.panelCommentInput.value = '';
-      
-      utils.debugLog(`Comment added to "${item.title}":`, newComment);
-      
-      ui.render(); // This will update both main list and comments panel
-      api.saveItems();
-    },
-    
-    handleCommentsToggle(e) {
-      const button = e.target.closest('.comments-toggle');
-      if (!button) return;
-      
-      const itemId = Number(button.dataset.itemId);
-      ui.openCommentsPanel(itemId);
-    },
-    
-    handleTitleInput() {
-      clearTimeout(state.suggestionDebounceTimer);
-      state.selectedSuggestion = null; // Reset selection on type
-      
-      const query = DOMElements.titleInput.value.trim();
-      if (query.length < 2) {
-        ui.hideSuggestions();
-        return;
-      }
-      
-      state.suggestionDebounceTimer = setTimeout(async () => {
-        const suggestions = await api.searchTMDB(query);
-        ui.renderSuggestions(suggestions);
-      }, config.SUGGESTION_DEBOUNCE_MS);
-    },
-    
-    async handleSuggestionClick(e) {
-      const suggestionItem = e.target.closest('.suggestion-item');
-      if (!suggestionItem) return;
-      
-      // Store the selected suggestion's data
-      state.selectedSuggestion = { ...suggestionItem.dataset };
-      
-      DOMElements.titleInput.value = state.selectedSuggestion.title;
-      ui.hideSuggestions();
-      
-      // Auto-add the item immediately when clicking suggestion
-      utils.debugLog('Auto-adding suggestion:', state.selectedSuggestion);
-      await handlers.handleAddItem();
-    },
-    
-    handleOutsideTap(e) {
-      // Close suggestions if tapping outside the form
-      if (!e.target.closest('.add-item-form-container') && 
-          !e.target.closest('#suggestions-box')) {
-        ui.hideSuggestions();
-      }
-    }
-  };
-
-  // ---------- 8. INITIALIZATION ----------
-  function init() {
-    if (!config.SHEET_WEB_APP_URL || !config.TMDB_API_KEY) { 
-      ui.updateStatus('Configuration Error: Missing API keys', true); 
-      return; 
-    }
-    
-    // Generate or retrieve user ID
-    state.userId = localStorage.getItem('watchRankUserId') || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem('watchRankUserId', state.userId);
-    
-    // Get or prompt for username
-    state.userName = localStorage.getItem('watchRankUserName');
-    if (!state.userName) { 
-      const name = prompt('Enter a display name:', 'MovieFan'); 
-      state.userName = (name || 'Anonymous').trim(); 
-      localStorage.setItem('watchRankUserName', state.userName); 
-    }
-
-    utils.debugLog('Initialized with user:', { id: state.userId, name: state.userName });
-
-    // Event listeners for main form
-    DOMElements.addButton.addEventListener('click', handlers.handleAddItem);
-    DOMElements.titleInput.addEventListener('input', handlers.handleTitleInput);
-    DOMElements.titleInput.addEventListener('keypress', (e) => { 
-      if (e.key === 'Enter') { 
-        e.preventDefault(); 
-        handlers.handleAddItem(); 
-      } 
-    });
-    
-    // Event listeners for item interactions
-    DOMElements.itemList.addEventListener('click', e => { 
-      handlers.handleVote(e); 
-      handlers.handleCommentsToggle(e);
-    });
-    
-    // Event listeners for suggestions
-    DOMElements.suggestionsList.addEventListener('click', handlers.handleSuggestionClick);
-    DOMElements.closeSuggestionsBtn.addEventListener('click', ui.hideSuggestions);
-    document.addEventListener('click', handlers.handleOutsideTap);
-
-    // Event listeners for comments panel
-    DOMElements.closeComments.addEventListener('click', ui.closeCommentsPanel);
-    DOMElements.commentsOverlay.addEventListener('click', ui.closeCommentsPanel);
-    DOMElements.panelCommentBtn.addEventListener('click', handlers.handleAddComment);
-    DOMElements.panelCommentInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handlers.handleAddComment();
-      }
-    });
-
-    // ESC key to close panels
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        if (state.currentCommentsItemId) {
-          ui.closeCommentsPanel();
-        } else if (DOMElements.suggestionsBox.style.display === 'flex') {
-          ui.hideSuggestions();
-        }
-      }
-    });
-
-    // Initial load and setup polling
-    api.loadItems().then(() => {
-      setInterval(() => {
-        if (!state.isSaving && !state.isSyncing) {
-          api.loadItems();
-        }
-      }, config.POLL_INTERVAL_MS);
-    });
-  }
-
-  // Start the application
-  document.addEventListener('DOMContentLoaded', init);
-})();
-</script>
+    </script>
 </body>
 </html>
