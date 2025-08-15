@@ -189,11 +189,12 @@
             version: 1
         };
 
-        // ---------- Robust Storage ----------
+        // ---------- Fixed Storage ----------
         const storage = {
             set(key, value) {
                 try {
                     const data = { value, timestamp: Date.now(), version: state.version };
+                    localStorage.setItem(key, JSON.stringify(data));
                     return true;
                 } catch (e) {
                     console.error('Storage set failed:', e);
@@ -222,6 +223,7 @@
             
             remove(key) {
                 try {
+                    localStorage.removeItem(key);
                     return true;
                 } catch (e) {
                     console.error('Storage remove failed:', e);
@@ -307,8 +309,10 @@
             initializeUser();
             bindUI();
             
-            // Try to load from memory cache first
+            // Try to load from localStorage cache first
             const cachedItems = storage.get('watchlist_cache', []);
+            console.log('Loaded from cache:', cachedItems);
+            
             if (cachedItems.length > 0) {
                 state.items = validateItems(cachedItems);
                 renderWatchlist();
@@ -325,11 +329,13 @@
         });
 
         function initializeUser() {
-            let userId = state.userId || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            let userId = storage.get('user_id') || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             state.userId = userId;
+            storage.set('user_id', userId);
             
-            let userName = state.userName || 'MovieFan';
+            let userName = storage.get('user_name') || 'MovieFan';
             state.userName = userName;
+            storage.set('user_name', userName);
         }
 
         function bindUI() {
@@ -454,6 +460,10 @@
             });
             
             state.items.push(newItem);
+            
+            // Save to local cache immediately
+            storage.set('watchlist_cache', state.items);
+            
             renderWatchlist();
             updateStatus('Added to watchlist, saving...');
             
@@ -491,6 +501,9 @@
             // Re-sort by votes
             state.items.sort((a, b) => b.votes - a.votes);
             
+            // Save to local cache immediately
+            storage.set('watchlist_cache', state.items);
+            
             // Update UI immediately
             renderWatchlist();
             
@@ -526,6 +539,8 @@
                 
                 if (validatedItems.length > 0 || state.items.length === 0) {
                     state.items = validatedItems.sort((a, b) => b.votes - a.votes);
+                    // Update local cache with server data
+                    storage.set('watchlist_cache', state.items);
                     renderWatchlist();
                 }
 
@@ -534,7 +549,12 @@
 
             } catch (err) {
                 console.error('Load failed:', err);
-                updateStatus('Sync failed', true);
+                updateStatus('Sync failed - using cached data', true);
+                
+                // If server fails but we have no items, show empty state
+                if (state.items.length === 0) {
+                    renderWatchlist();
+                }
             } finally {
                 state.isSyncing = false;
             }
@@ -642,11 +662,15 @@
                     userId: state.userId,
                     isSaving: state.isSaving,
                     isSyncing: state.isSyncing,
-                    lastSync: state.lastSyncTime
+                    lastSync: state.lastSyncTime,
+                    cachedItems: storage.get('watchlist_cache', [])
                 });
             },
             
             clearCache() {
+                storage.remove('watchlist_cache');
+                storage.remove('user_id');
+                storage.remove('user_name');
                 location.reload();
             },
             
