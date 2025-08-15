@@ -36,95 +36,24 @@
         .item-type { background:#e74c3c; color:white; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600; display:inline-block; }
         .item-type.movie { background:#e74c3c; }
         .item-type.tvshow { background:#3498db; }
-        
-        .vote-section { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 12px 16px; 
-            border-top: 1px solid #efefef; 
-            background: #fafafa; 
-        }
-        .vote-buttons { 
-            display: flex; 
-            align-items: center; 
-            gap: 16px; 
-        }
-        .vote-btn { 
-            background: none; 
-            border: 1px solid #e0e0e0; 
-            width: 44px; 
-            height: 44px; 
-            border-radius: 50%; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            transition: all .2s; 
-            flex-shrink: 0; 
-        }
-        .vote-btn svg { 
-            width: 22px; 
-            height: 22px; 
-            fill: #666; 
-        }
-        .vote-btn.up.voted { 
-            background: #27ae60; 
-            border-color: #27ae60; 
-        }
-        .vote-btn.up.voted svg { 
-            fill: white; 
-        }
-        .vote-btn.down.voted { 
-            background: #e74c3c; 
-            border-color: #e74c3c; 
-        }
-        .vote-btn.down.voted svg { 
-            fill: white; 
-        }
-        .vote-count { 
-            font-weight: 700; 
-            color: #262626; 
-            margin: 0 8px; 
-            min-width: 40px; 
-            text-align: center; 
-            font-size: 20px; 
-        }
-        .vote-count.positive { 
-            color: #27ae60; 
-        }
-        .vote-count.negative { 
-            color: #e74c3c; 
-        }
-        
+        .vote-section { display: flex; justify-content: center; align-items: center; padding: 12px 16px; border-top: 1px solid #efefef; background: #fafafa; }
+        .vote-buttons { display: flex; align-items: center; gap: 16px; }
+        .vote-btn { background: none; border: 1px solid #e0e0e0; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; }
+        .vote-btn svg { width: 22px; height: 22px; fill: #666; }
+        .vote-btn.up.voted { background: #27ae60; border-color: #27ae60; }
+        .vote-btn.up.voted svg { fill: white; }
+        .vote-btn.down.voted { background: #e74c3c; border-color: #e74c3c; }
+        .vote-btn.down.voted svg { fill: white; }
+        .vote-count { font-weight: 700; color: #262626; margin: 0 8px; min-width: 40px; text-align: center; font-size: 20px; }
+        .vote-count.positive { color: #27ae60; }
+        .vote-count.negative { color: #e74c3c; }
         .loading { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; color:#8e8e8e; }
         .loading-gif { width:40px; height:40px; margin-bottom:16px; }
         .error { background:#fed7d7; color:#c53030; padding:12px; border-radius:8px; margin:16px; text-align:center; }
         .empty-state { text-align:center; padding:40px 20px; color:#8e8e8e; background:white; border-radius:8px; border:1px solid #dbdbdb; }
         .empty-state h3 { margin-bottom:8px; font-weight:600; }
-        
-        .debug-panel { 
-            position: fixed; 
-            bottom: 20px; 
-            right: 20px; 
-            background: white; 
-            border: 1px solid #dbdbdb; 
-            border-radius: 8px; 
-            padding: 10px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-            font-size: 12px;
-            z-index: 1000;
-        }
-        .debug-panel button { 
-            background: #0095f6; 
-            color: white; 
-            border: none; 
-            padding: 4px 8px; 
-            margin: 2px; 
-            border-radius: 4px; 
-            cursor: pointer; 
-        }
-        
+        .debug-panel { position: fixed; bottom: 20px; right: 20px; background: white; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 12px; z-index: 1000; }
+        .debug-panel button { background: #0095f6; color: white; border: none; padding: 4px 8px; margin: 2px; border-radius: 4px; cursor: pointer; }
         @media (max-width:640px) {
             .search-results { grid-template-columns: 1fr; }
             .debug-panel { display: none; }
@@ -189,7 +118,7 @@
             version: 1
         };
 
-        // ---------- Fixed Storage ----------
+        // ---------- Storage ----------
         const storage = {
             set(key, value) {
                 try {
@@ -201,26 +130,21 @@
                     return false;
                 }
             },
-            
             get(key, defaultValue = null) {
                 try {
                     const storedValue = localStorage.getItem(key);
                     if (!storedValue) return defaultValue;
-                    
                     const data = JSON.parse(storedValue);
                     if (data.version && data.version !== state.version) {
-                        console.warn('Storage version mismatch, clearing data');
                         this.remove(key);
                         return defaultValue;
                     }
-                    
                     return data.value !== undefined ? data.value : defaultValue;
                 } catch (e) {
                     console.error('Storage get failed:', e);
                     return defaultValue;
                 }
             },
-            
             remove(key) {
                 try {
                     localStorage.removeItem(key);
@@ -239,82 +163,47 @@
                     return await operation();
                 } catch (error) {
                     console.warn(`Operation failed (attempt ${attempt}/${maxRetries}):`, error);
-                    
-                    if (attempt === maxRetries) {
-                        throw error;
-                    }
-                    
+                    if (attempt === maxRetries) throw error;
                     await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY * attempt));
                 }
             }
         }
+        
+        // ---------- Data Sanitization (NEW) ----------
+        function sanitizeItems(itemsData) {
+            if (!Array.isArray(itemsData)) return [];
 
-        // ---------- Data validation ----------
-        function sanitizeItem(rawItem) {
-            const item = {
-                id: String(rawItem.id || '').trim(),
-                title: String(rawItem.title || 'Untitled').trim(),
-                type: String(rawItem.type || 'Movie').trim(),
-                posterPath: String(rawItem.posterPath || '').trim() || null,
-                votes: parseInt(rawItem.votes) || 0,
-                voters: {}
-            };
-
-            // Parse voters safely
-            if (rawItem.voters) {
-                try {
-                    if (typeof rawItem.voters === 'string') {
-                        item.voters = JSON.parse(rawItem.voters) || {};
-                    } else if (typeof rawItem.voters === 'object') {
-                        item.voters = rawItem.voters || {};
-                    }
-                } catch (e) {
-                    console.warn('Failed to parse voters for item', item.id, e);
-                    item.voters = {};
-                }
-            }
-
-            // Validate voters object and recalculate votes
-            if (typeof item.voters !== 'object' || Array.isArray(item.voters)) {
-                item.voters = {};
-            }
-            
-            // Recalculate votes from voters to ensure consistency
-            item.votes = Object.values(item.voters).reduce((sum, vote) => {
-                const v = parseInt(vote);
-                return sum + (isNaN(v) ? 0 : v);
-            }, 0);
-
-            return item;
-        }
-
-        function validateItems(items) {
-            if (!Array.isArray(items)) return [];
-            
-            const validItems = items
-                .map(sanitizeItem)
-                .filter(item => item.id && item.title && item.title !== 'Untitled');
+            return itemsData.map(raw => {
+                const voters = (typeof raw.voters === 'string') ? safeJsonParse(raw.voters, {}) : (raw.voters || {});
                 
-            const seen = new Set();
-            return validItems.filter(item => {
-                if (seen.has(item.id)) return false;
-                seen.add(item.id);
-                return true;
+                Object.keys(voters).forEach(k => { voters[k] = Number(voters[k]) || 0; });
+                
+                const votesSum = Object.values(voters).reduce((s, v) => s + Number(v || 0), 0);
+                
+                return {
+                    id: raw.id,
+                    title: raw.title || 'Untitled',
+                    type: raw.type || 'Movie',
+                    posterPath: raw.posterPath || null,
+                    voters: voters,
+                    votes: votesSum
+                };
             });
         }
 
-        // ---------- Init ----------
+        // ---------- Init (CORRECTED) ----------
         document.addEventListener('DOMContentLoaded', async () => {
             updateStatus('Initializing...');
             initializeUser();
             bindUI();
             
-            // Try to load from localStorage cache first
             const cachedItems = storage.get('watchlist_cache', []);
             console.log('Loaded from cache:', cachedItems);
             
-            if (cachedItems.length > 0) {
-                state.items = validateItems(cachedItems);
+            if (cachedItems && cachedItems.length > 0) {
+                // ✅ FIX: Sanitize the items loaded from the cache
+                state.items = sanitizeItems(cachedItems);
+                state.items.sort((a, b) => b.votes - a.votes);
                 renderWatchlist();
                 updateStatus('Loaded from cache, syncing...');
             }
@@ -339,24 +228,17 @@
         }
 
         function bindUI() {
-            const searchBtn = document.getElementById('searchBtn');
-            const searchInput = document.getElementById('searchInput');
-            const searchResults = document.getElementById('searchResults');
-            const watchlistContainer = document.getElementById('watchlistItems');
-
-            searchBtn.addEventListener('click', searchMovies);
-            searchInput.addEventListener('keypress', (e) => {
+            document.getElementById('searchBtn').addEventListener('click', searchMovies);
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') { e.preventDefault(); searchMovies(); }
             });
 
-            searchResults.addEventListener('click', (e) => {
+            document.getElementById('searchResults').addEventListener('click', (e) => {
                 const item = e.target.closest('.search-item');
-                if (!item) return;
-                addToWatchlist(item.dataset.id, item.dataset.title, item.dataset.type, item.dataset.poster);
+                if (item) addToWatchlist(item.dataset.id, item.dataset.title, item.dataset.type, item.dataset.poster);
             });
 
-            // Enhanced voting with button state management
-            watchlistContainer.addEventListener('click', (e) => {
+            document.getElementById('watchlistItems').addEventListener('click', (e) => {
                 const btn = e.target.closest('.vote-btn');
                 if (!btn || btn.disabled) return;
 
@@ -366,7 +248,6 @@
                 const itemId = itemElement.dataset.itemId;
                 const voteType = btn.classList.contains('up') ? 'up' : 'down';
 
-                // Disable button temporarily to prevent double-clicks
                 btn.disabled = true;
                 setTimeout(() => { btn.disabled = false; }, 500);
 
@@ -378,7 +259,6 @@
             const statusBar = document.getElementById('status');
             statusBar.textContent = message;
             statusBar.style.color = isError ? '#ed4956' : '#8e8e8e';
-            console.log('Status:', message);
         }
 
         // ---------- Search ----------
@@ -391,13 +271,12 @@
             
             btn.disabled = true;
             btn.textContent = '...';
-            resultsContainer.innerHTML = '<div class="loading"><svg class="loading-gif" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#0095f6" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.416" stroke-dashoffset="31.416"></circle></svg><p>searching...</p></div>';
+            resultsContainer.innerHTML = `<div class="loading"><p>searching...</p></div>`;
 
             try {
                 const results = await retryOperation(() => searchOMDB(q));
                 displaySearchResults(results);
             } catch (err) {
-                console.error('Search failed:', err);
                 resultsContainer.innerHTML = `<div class="error">Search failed. Please try again.</div>`;
             } finally {
                 btn.disabled = false;
@@ -408,7 +287,6 @@
         async function searchOMDB(query) {
             const url = `https://www.omdbapi.com/?apikey=${CONFIG.OMDB_API_KEY}&s=${encodeURIComponent(query)}`;
             const res = await fetch(url);
-            
             if (!res.ok) throw new Error(`OMDB API error: ${res.status}`);
             
             const data = await res.json();
@@ -422,17 +300,15 @@
                 year: item.Year,
                 type: item.Type === 'series' ? 'TV Show' : 'Movie',
                 poster: item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450/dbdbdb/8e8e8e?text=no+poster',
-                imdbId: item.imdbID
             }));
         }
 
         function displaySearchResults(results) {
             const container = document.getElementById('searchResults');
             if (!results || results.length === 0) {
-                container.innerHTML = '<div class="empty-state"><h3>nothing found</h3><p>try a different search</p></div>';
+                container.innerHTML = `<div class="empty-state"><h3>nothing found</h3><p>try a different search</p></div>`;
                 return;
             }
-
             container.innerHTML = results.map(item => `
                 <div class="search-item" data-id="${escapeAttr(item.id)}" data-title="${escapeAttr(item.title)}" data-type="${escapeAttr(item.type)}" data-poster="${escapeAttr(item.poster)}">
                     <img src="${escapeAttr(item.poster)}" alt="${escapeAttr(item.title)}" onerror="this.src='https://via.placeholder.com/300x450/dbdbdb/8e8e8e?text=no+poster'">
@@ -450,20 +326,12 @@
                 return;
             }
             
-            const newItem = sanitizeItem({
-                id: id,
-                title: title,
-                type: type,
-                posterPath: poster,
-                votes: 0,
-                voters: {}
-            });
+            const newItem = sanitizeItems([{
+                id: id, title: type, posterPath: poster, voters: {}
+            }])[0];
             
             state.items.push(newItem);
-            
-            // Save to local cache immediately
             storage.set('watchlist_cache', state.items);
-            
             renderWatchlist();
             updateStatus('Added to watchlist, saving...');
             
@@ -478,36 +346,25 @@
             document.getElementById('searchResults').innerHTML = '';
         }
 
-        // ---------- Enhanced Voting ----------
-        async function vote(itemId, voteType) {
+        // ---------- Voting ----------
+        function vote(itemId, voteType) {
             const item = state.items.find(i => i.id === itemId);
             if (!item) return;
 
-            if (!item.voters) item.voters = {};
-            
             const currentVote = item.voters[state.userId] || 0;
             const voteValue = voteType === 'up' ? 1 : -1;
             
-            // Toggle logic: same vote removes it, different vote replaces it
             if (currentVote === voteValue) {
                 delete item.voters[state.userId];
             } else {
                 item.voters[state.userId] = voteValue;
             }
             
-            // Recalculate votes
-            item.votes = Object.values(item.voters).reduce((sum, vote) => sum + vote, 0);
-            
-            // Re-sort by votes
+            item.votes = Object.values(item.voters).reduce((sum, v) => sum + v, 0);
             state.items.sort((a, b) => b.votes - a.votes);
-            
-            // Save to local cache immediately
             storage.set('watchlist_cache', state.items);
-            
-            // Update UI immediately
             renderWatchlist();
             
-            // Debounced save to avoid too many requests
             clearTimeout(vote.saveTimer);
             vote.saveTimer = setTimeout(async () => {
                 try {
@@ -519,13 +376,11 @@
             }, 1000);
         }
 
-        // ---------- Load/Save ----------
+        // ---------- Load / Save (CORRECTED) ----------
         async function loadWatchlist() {
             if (state.isSyncing) return;
-            
             state.isSyncing = true;
-            updateStatus('Loading...');
-
+            updateStatus('Syncing...');
             try {
                 const data = await retryOperation(async () => {
                     const res = await fetch(CONFIG.SHEET_WEB_APP_URL);
@@ -533,28 +388,20 @@
                     return await res.json();
                 });
 
-                if (!Array.isArray(data)) throw new Error('Invalid data format');
+                // ✅ FIX: Use the reusable sanitizing function
+                state.items = sanitizeItems(data);
 
-                const validatedItems = validateItems(data);
+                state.items.sort((a, b) => b.votes - a.votes);
+                storage.set('watchlist_cache', state.items);
+                renderWatchlist();
                 
-                if (validatedItems.length > 0 || state.items.length === 0) {
-                    state.items = validatedItems.sort((a, b) => b.votes - a.votes);
-                    // Update local cache with server data
-                    storage.set('watchlist_cache', state.items);
-                    renderWatchlist();
-                }
-
                 state.lastSyncTime = new Date();
                 updateStatus(`Synced at ${state.lastSyncTime.toLocaleTimeString()}`);
 
             } catch (err) {
-                console.error('Load failed:', err);
+                console.error('Failed to load watchlist:', err);
                 updateStatus('Sync failed - using cached data', true);
-                
-                // If server fails but we have no items, show empty state
-                if (state.items.length === 0) {
-                    renderWatchlist();
-                }
+                if (state.items.length === 0) renderWatchlist();
             } finally {
                 state.isSyncing = false;
             }
@@ -562,7 +409,6 @@
 
         async function saveWatchlist() {
             if (state.isSaving) return;
-            
             state.isSaving = true;
             updateStatus('Saving...');
 
@@ -573,25 +419,20 @@
                         voters: JSON.stringify(item.voters)
                     }))
                 };
-
                 await retryOperation(async () => {
                     const response = await fetch(CONFIG.SHEET_WEB_APP_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify(payload)
                     });
-
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    
                     const result = await response.json();
-                    if (result.status !== 'success') {
-                        throw new Error(result.message || 'Unknown error');
-                    }
+                    if (result.status !== 'success') throw new Error(result.message || 'Unknown error');
                 });
-
-                // Reload to get authoritative data
                 await loadWatchlist();
-                
+            } catch (error) {
+                 updateStatus('Save failed. Retrying sync later.', true);
+                 console.error("Save failed:", error);
             } finally {
                 state.isSaving = false;
             }
@@ -600,21 +441,14 @@
         // ---------- Render ----------
         function renderWatchlist() {
             const container = document.getElementById('watchlistItems');
-            
             if (!state.items || state.items.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h3>your list is empty</h3>
-                        <p>search & add some movies or shows!</p>
-                    </div>
-                `;
+                container.innerHTML = `<div class="empty-state"><h3>your list is empty</h3><p>search & add some movies or shows!</p></div>`;
                 return;
             }
-
             container.innerHTML = state.items.map((item, index) => {
-                const userVote = (item.voters && item.voters[state.userId]) || 0;
+                const userVote = item.voters[state.userId] || 0;
                 const voteClass = item.votes > 0 ? 'positive' : item.votes < 0 ? 'negative' : '';
-                const typeClass = item.type.toLowerCase().replace(/\s+/g, '');
+                const typeClass = (item.type || 'movie').toLowerCase().replace(/\s+/g, '');
                 const poster = item.posterPath || 'https://via.placeholder.com/300x450/dbdbdb/8e8e8e?text=no+poster';
 
                 return `
@@ -644,53 +478,29 @@
         }
 
         // ---------- Utilities ----------
+        function safeJsonParse(str, fallback) {
+            try { return JSON.parse(str); } catch (e) { return fallback; }
+        }
         function escapeHtml(text) {
             const d = document.createElement('div');
             d.textContent = text || '';
             return d.innerHTML;
         }
-        
         function escapeAttr(text) {
             return String(text || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
         // ---------- Debug Tools ----------
         window.debugApp = {
-            showState() {
-                console.log('Current State:', {
-                    items: state.items,
-                    userId: state.userId,
-                    isSaving: state.isSaving,
-                    isSyncing: state.isSyncing,
-                    lastSync: state.lastSyncTime,
-                    cachedItems: storage.get('watchlist_cache', [])
-                });
-            },
-            
+            showState() { console.log('Current State:', state); },
             clearCache() {
                 storage.remove('watchlist_cache');
                 storage.remove('user_id');
                 storage.remove('user_name');
                 location.reload();
             },
-            
-            async forceSave() {
-                try {
-                    await saveWatchlist();
-                    console.log('Force save completed');
-                } catch (err) {
-                    console.error('Force save failed:', err);
-                }
-            },
-            
-            async forceLoad() {
-                try {
-                    await loadWatchlist();
-                    console.log('Force load completed');
-                } catch (err) {
-                    console.error('Force load failed:', err);
-                }
-            }
+            forceSave() { saveWatchlist().catch(e => console.error(e)); },
+            forceLoad() { loadWatchlist().catch(e => console.error(e)); }
         };
     </script>
 </body>
